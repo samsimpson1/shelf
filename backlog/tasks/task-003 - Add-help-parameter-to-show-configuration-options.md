@@ -1,0 +1,35 @@
+---
+id: task-003
+title: Add -help parameter to show configuration options
+status: To Do
+assignee: []
+created_date: '2025-11-08 16:00'
+labels:
+  - enhancement
+  - usability
+  - cli
+dependencies: []
+priority: medium
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+Add a `-help` command-line flag that displays all available configuration options (environment variables) and their default values.
+
+Currently, the application accepts the following environment variables:
+- `MEDIA_DIR` - Path to media backup directory (default: `/home/sam/Scratch/media/backup`)
+- `PORT` - HTTP server port (default: `8080`)
+- `TMDB_API_KEY` - TMDB API key for metadata fetching (optional)
+
+The `-help` flag should display this information in a user-friendly format when the user runs `./shelf -help` or `./shelf --help`.
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [ ] #1 Running `./shelf -help` displays all environment variables with descriptions and default values
+- [ ] #2 Running `./shelf --help` works the same as `-help`
+- [ ] #3 Help output is clear, well-formatted, and easy to read
+- [ ] #4 Application exits after displaying help (does not start server)
+- [ ] #5 Existing functionality remains unchanged when no flags are provided
+<!-- AC:END -->
