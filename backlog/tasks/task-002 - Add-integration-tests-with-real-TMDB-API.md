@@ -1,9 +1,10 @@
 ---
 id: task-002
 title: Add integration tests with real TMDB API
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2025-11-08 15:53'
+updated_date: '2025-11-08 16:11'
 labels:
   - testing
   - tmdb
