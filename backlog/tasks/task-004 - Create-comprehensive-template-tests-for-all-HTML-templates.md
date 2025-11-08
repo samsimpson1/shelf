@@ -4,7 +4,7 @@ title: Create comprehensive template tests for all HTML templates
 status: In Progress
 assignee: []
 created_date: '2025-11-08 16:22'
-updated_date: '2025-11-08 21:12'
+updated_date: '2025-11-08 21:17'
 labels:
   - testing
   - templates
@@ -70,14 +70,14 @@ Create comprehensive tests for Go HTML templates to catch template errors before
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 New templates_test.go file created with comprehensive template tests
-- [ ] #2 All 4 templates (index, detail, search, confirm) have dedicated tests
-- [ ] #3 Tests cover template parsing validation
-- [ ] #4 Tests cover execution with valid data for each template
-- [ ] #5 Tests cover edge cases: empty lists, nil pointers, missing optional fields
-- [ ] #6 Tests cover type variations: Film vs TV, MovieSearchResult vs TVSearchResult
-- [ ] #7 All tests pass successfully
-- [ ] #8 Code coverage for template rendering paths improved
+- [x] #1 New templates_test.go file created with comprehensive template tests
+- [x] #2 All 4 templates (index, detail, search, confirm) have dedicated tests
+- [x] #3 Tests cover template parsing validation
+- [x] #4 Tests cover execution with valid data for each template
+- [x] #5 Tests cover edge cases: empty lists, nil pointers, missing optional fields
+- [x] #6 Tests cover type variations: Film vs TV, MovieSearchResult vs TVSearchResult
+- [x] #7 All tests pass successfully
+- [x] #8 Code coverage for template rendering paths improved
 <!-- AC:END -->
 
 ## Implementation Plan
