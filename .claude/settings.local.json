@@ -4,13 +4,15 @@
       "Bash(tree:*)",
       "Bash(go test:*)",
       "Bash(go build:*)",
-      "mcp__backlog"
+      "mcp__backlog",
+      "Bash(curl:*)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "backlog"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }
