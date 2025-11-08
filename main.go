@@ -25,6 +25,11 @@ func main() {
 		log.Println("Warning: TMDB_API_KEY not set, poster fetching will be disabled")
 	}
 
+	devMode := os.Getenv("DEV_MODE") == "true"
+	if devMode {
+		log.Println("Development mode enabled - templates will be reloaded on every request")
+	}
+
 	// Validate media directory exists
 	info, err := os.Stat(mediaDir)
 	if err != nil {
@@ -63,6 +68,7 @@ func main() {
 
 	// Create app
 	app := NewApp(mediaList, tmpl, mediaDir)
+	app.SetDevMode(devMode)
 
 	// Setup HTTP routes
 	mux := http.NewServeMux()

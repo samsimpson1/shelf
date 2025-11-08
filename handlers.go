@@ -14,6 +14,7 @@ type App struct {
 	mediaList []Media
 	templates *template.Template
 	mediaDir  string
+	devMode   bool // Enable template hot-reloading in development
 }
 
 // NewApp creates a new App instance
@@ -22,11 +23,33 @@ func NewApp(mediaList []Media, templates *template.Template, mediaDir string) *A
 		mediaList: mediaList,
 		templates: templates,
 		mediaDir:  mediaDir,
+		devMode:   false,
 	}
+}
+
+// SetDevMode enables or disables development mode (template hot-reloading)
+func (app *App) SetDevMode(enabled bool) {
+	app.devMode = enabled
+}
+
+// loadTemplates reloads templates from disk (used in dev mode)
+func (app *App) loadTemplates() *template.Template {
+	tmpl, err := template.ParseFiles("templates/index.html", "templates/detail.html")
+	if err != nil {
+		log.Printf("Error reloading templates: %v", err)
+		return app.templates // Fall back to cached templates
+	}
+	return tmpl
 }
 
 // IndexHandler handles the main page request
 func (app *App) IndexHandler(w http.ResponseWriter, r *http.Request) {
+	// Reload templates in dev mode
+	tmpl := app.templates
+	if app.devMode {
+		tmpl = app.loadTemplates()
+	}
+
 	// Sort media list: Films first, then TV shows, alphabetically within each type
 	sorted := make([]Media, len(app.mediaList))
 	copy(sorted, app.mediaList)
@@ -46,7 +69,7 @@ func (app *App) IndexHandler(w http.ResponseWriter, r *http.Request) {
 		MediaList: sorted,
 	}
 
-	err := app.templates.ExecuteTemplate(w, "index.html", data)
+	err := tmpl.ExecuteTemplate(w, "index.html", data)
 	if err != nil {
 		http.Error(w, "Error rendering template", http.StatusInternalServerError)
 		return
@@ -92,6 +115,12 @@ func (app *App) PosterHandler(w http.ResponseWriter, r *http.Request) {
 
 // DetailHandler handles individual media detail pages
 func (app *App) DetailHandler(w http.ResponseWriter, r *http.Request) {
+	// Reload templates in dev mode
+	tmpl := app.templates
+	if app.devMode {
+		tmpl = app.loadTemplates()
+	}
+
 	// Extract slug from URL: /media/{slug}
 	slug := strings.TrimPrefix(r.URL.Path, "/media/")
 	slug = strings.TrimSuffix(slug, "/")
@@ -125,7 +154,7 @@ func (app *App) DetailHandler(w http.ResponseWriter, r *http.Request) {
 		HasPoster:   hasPoster,
 	}
 
-	err := app.templates.ExecuteTemplate(w, "detail.html", data)
+	err := tmpl.ExecuteTemplate(w, "detail.html", data)
 	if err != nil {
 		log.Printf("Error rendering detail template: %v", err)
 		http.Error(w, "Error rendering template", http.StatusInternalServerError)
