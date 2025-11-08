@@ -1,7 +1,7 @@
 ---
 id: task-002
 title: Add integration tests with real TMDB API
-status: In Progress
+status: Done
 assignee: []
 created_date: '2025-11-08 15:53'
 updated_date: '2025-11-08 16:14'
@@ -49,5 +49,5 @@ Tests should use Go's standard testing patterns:
 - [x] #12 All tests clean up temporary files properly
 - [x] #13 CLAUDE.md updated with integration test documentation
 - [x] #14 Instructions added for running with TMDB_API_KEY=your_key go test -v
-- [ ] #15 All integration tests pass when TMDB_API_KEY is provided
+- [x] #15 All integration tests pass when TMDB_API_KEY is provided
 <!-- AC:END -->
