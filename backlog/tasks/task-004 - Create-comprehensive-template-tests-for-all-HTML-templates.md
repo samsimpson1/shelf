@@ -1,9 +1,10 @@
 ---
 id: task-004
 title: Create comprehensive template tests for all HTML templates
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2025-11-08 16:22'
+updated_date: '2025-11-08 21:12'
 labels:
   - testing
   - templates
@@ -78,3 +79,25 @@ Create comprehensive tests for Go HTML templates to catch template errors before
 - [ ] #7 All tests pass successfully
 - [ ] #8 Code coverage for template rendering paths improved
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Create `templates_test.go` file
+2. Add helper functions to build test data for each template
+3. Test template parsing (catch syntax errors)
+4. Test each template with various data scenarios:
+   - Valid data (happy path)
+   - Empty/nil optional fields
+   - Edge cases (zero values, empty slices)
+   - Type variations (Film vs TV, MovieSearchResult vs TVSearchResult)
+5. Verify template output contains expected elements
+
+## Benefits
+- Catch template syntax errors at test time
+- Prevent nil pointer panics from optional fields
+- Verify type assertions work correctly
+- Document expected data structures
+- Regression protection for template changes
+<!-- SECTION:DESCRIPTION:END -->
+<!-- SECTION:PLAN:END -->
