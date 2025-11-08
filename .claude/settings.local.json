@@ -3,9 +3,14 @@
     "allow": [
       "Bash(tree:*)",
       "Bash(go test:*)",
-      "Bash(go build:*)"
+      "Bash(go build:*)",
+      "mcp__backlog"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "backlog"
+  ],
+  "enableAllProjectMcpServers": true
 }
