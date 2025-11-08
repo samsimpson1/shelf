@@ -1,9 +1,10 @@
 ---
 id: task-001.07
 title: Fetch and store media title from TMDB in title.txt
-status: To Do
+status: Done
 assignee: []
 created_date: '2025-11-08 16:31'
+updated_date: '2025-11-08 16:37'
 labels:
   - enhancement
   - tmdb
@@ -25,10 +26,10 @@ This will help preserve the official/canonical title from TMDB, which may differ
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 TMDB client fetches the official title (movie.title or tv.name) from API response
-- [ ] #2 Title is saved to title.txt file in the media directory
-- [ ] #3 Existing title.txt files are not overwritten (consistent with caching behavior)
-- [ ] #4 Unit tests added to tmdb_test.go covering title fetching and saving
-- [ ] #5 Integration test added to tmdb_integration_test.go for title metadata workflow
-- [ ] #6 CLAUDE.md documentation updated to document title.txt file in directory structure section
+- [x] #1 TMDB client fetches the official title (movie.title or tv.name) from API response
+- [x] #2 Title is saved to title.txt file in the media directory
+- [x] #3 Existing title.txt files are not overwritten (consistent with caching behavior)
+- [x] #4 Unit tests added to tmdb_test.go covering title fetching and saving
+- [x] #5 Integration test added to tmdb_integration_test.go for title metadata workflow
+- [x] #6 CLAUDE.md documentation updated to document title.txt file in directory structure section
 <!-- AC:END -->
