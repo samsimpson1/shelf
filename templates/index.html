@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shelf</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: sans-serif; padding: 20px; }
+        h1 { margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; }
+        .item { text-decoration: none; color: black; }
+        .item img { width: 100%; display: block; }
+        .placeholder { width: 100%; aspect-ratio: 2/3; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 48px; }
+        .title { margin-top: 5px; }
+        .meta { font-size: 14px; color: #666; margin-top: 3px; }
+        .count { margin-top: 20px; color: #666; }
+        .empty { text-align: center; padding: 40px; }
+    </style>
+</head>
+<body>
+    <h1>Shelf</h1>
+    {{if .MediaList}}
+    <div class="grid">
+        {{range .MediaList}}
+        <a href="/media/{{.Slug}}" class="item">
+            {{if .PosterURL}}
+            <img src="{{.PosterURL}}" alt="{{.DisplayTitle}}"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="placeholder" style="display: none;">
+                {{if eq .Type 0}}🎬{{else}}📺{{end}}
+            </div>
+            {{else}}
+            <div class="placeholder">
+                {{if eq .Type 0}}🎬{{else}}📺{{end}}
+            </div>
+            {{end}}
+            <div class="title">{{.DisplayTitle}}</div>
+            <div class="meta">{{.Type}} • {{.DiskCount}} disk{{if ne .DiskCount 1}}s{{end}}</div>
+        </a>
+        {{end}}
+    </div>
+    <div class="count">{{len .MediaList}} item{{if ne (len .MediaList) 1}}s{{end}}</div>
+    {{else}}
+    <div class="empty">
+        <div>📁</div>
+        <h2>No Media Found</h2>
+        <p>No media items were found in the configured directory.</p>
+    </div>
+    {{end}}
+</body>
+</html>

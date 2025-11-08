@@ -1,0 +1,547 @@
+/* Retro 90s OS Aesthetic Stylesheet */
+
+/* ============================================
+   CSS Reset & Base Styles
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "MS Sans Serif", "Tahoma", "Geneva", "Verdana", sans-serif;
+    font-size: 11px;
+    background: #008080;
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,.02) 2px, rgba(255,255,255,.02) 4px);
+    padding: 20px;
+    line-height: 1.4;
+    color: #000;
+    min-height: 100vh;
+}
+
+/* ============================================
+   Window Chrome Components
+   ============================================ */
+
+.window {
+    background: #c0c0c0;
+    border-width: 2px;
+    border-style: solid;
+    border-color: #fff #000 #000 #fff;
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+    margin: 0 auto;
+    max-width: 1200px;
+}
+
+.window-btn:active {
+    border-color: #000 #fff #fff #000;
+    padding: 1px 0 0 1px;
+}
+
+.window-content {
+    background: white;
+    border: 2px solid;
+    border-color: #808080 #dfdfdf #dfdfdf #808080;
+    margin: 2px;
+    position: relative;
+}
+
+/* ============================================
+   Toolbar Styles
+   ============================================ */
+
+.toolbar {
+    background: #c0c0c0;
+    border-bottom: 2px solid;
+    border-color: #fff #808080 #808080 #fff;
+    padding: 4px;
+    display: flex;
+    gap: 2px;
+}
+
+/* ============================================
+   Button Styles
+   ============================================ */
+
+.retro-button {
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #fff #000 #000 #fff;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+    font-weight: normal;
+    min-width: 75px;
+}
+
+.retro-button:hover {
+    background: #d4d4d4;
+}
+
+.retro-button:active {
+    border-color: #000 #fff #fff #000;
+    padding: 5px 11px 3px 13px;
+}
+
+.retro-button:focus {
+    outline: 1px dotted #000;
+    outline-offset: -4px;
+}
+
+/* ============================================
+   Media Grid Styles
+   ============================================ */
+
+.media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 24px;
+    padding: 20px;
+    background: white;
+}
+
+.media-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #000;
+    cursor: pointer;
+    padding: 8px;
+    border: 1px solid transparent;
+}
+
+.media-item:hover {
+    background: rgba(0, 0, 128, 0.1);
+}
+
+.media-item:active,
+.media-item.selected {
+    background: #000080;
+    color: white;
+}
+
+.media-item:active .media-meta,
+.media-item.selected .media-meta {
+    color: white;
+}
+
+.media-thumbnail-container {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin-bottom: 8px;
+}
+
+.media-thumbnail {
+    width: 100px;
+    height: 100px;
+    border-radius: 2%;
+    border: 2px solid #808080;
+    box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.3),
+                inset 2px 2px 4px rgba(255, 255, 255, 0.5);
+    object-fit: cover;
+    display: block;
+}
+
+.media-thumbnail-placeholder {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 2px solid #808080;
+    box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.3),
+                inset 2px 2px 4px rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-size: 48px;
+}
+
+.media-title {
+    font-weight: normal;
+    font-size: 11px;
+    text-align: center;
+    word-wrap: break-word;
+    max-width: 110px;
+    line-height: 1.3;
+}
+
+.media-meta {
+    font-size: 10px;
+    color: #666;
+    margin-top: 2px;
+    text-align: center;
+}
+
+/* ============================================
+   Detail Page Styles
+   ============================================ */
+
+.detail-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+    padding: 20px;
+    background: white;
+}
+
+.detail-poster-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.detail-poster-frame {
+    border: 2px solid;
+    border-color: #808080 #fff #fff #808080;
+    padding: 4px;
+    background: #c0c0c0;
+}
+
+.detail-poster {
+    width: 100%;
+    display: block;
+    border: 1px solid #000;
+}
+
+.detail-poster-placeholder {
+    width: 100%;
+    aspect-ratio: 2/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 6em;
+    border: 1px solid #000;
+}
+
+.detail-info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.detail-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #000080;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.type-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: bold;
+    border: 1px solid;
+    background: #c0c0c0;
+    border-color: #fff #000 #000 #fff;
+}
+
+.type-film {
+    color: #000080;
+}
+
+.type-tv {
+    color: #800080;
+}
+
+/* ============================================
+   Group Box / Fieldset Styles
+   ============================================ */
+
+.group-box {
+    border: 2px solid;
+    border-color: #808080 #fff #fff #808080;
+    padding: 12px;
+    margin-top: 8px;
+    background: white;
+}
+
+.group-box-legend {
+    font-weight: bold;
+    font-size: 11px;
+    padding: 0 4px;
+    background: white;
+}
+
+.group-box-content {
+    font-size: 11px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.genre-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.genre-tag {
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #fff #808080 #808080 #fff;
+    padding: 2px 8px;
+    font-size: 10px;
+}
+
+/* ============================================
+   Metadata Grid
+   ============================================ */
+
+.metadata-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    padding: 12px;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #808080 #fff #fff #808080;
+}
+
+.metadata-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.metadata-label {
+    font-size: 10px;
+    color: #000;
+    font-weight: bold;
+}
+
+.metadata-value {
+    font-size: 12px;
+    color: #000;
+    font-weight: normal;
+}
+
+.metadata-value a {
+    color: #0000ff;
+    text-decoration: underline;
+}
+
+.metadata-value a:visited {
+    color: #800080;
+}
+
+/* ============================================
+   Status Bar
+   ============================================ */
+
+.status-bar {
+    background: #c0c0c0;
+    border-top: 2px solid;
+    border-color: #fff #808080 #808080 #fff;
+    padding: 3px 6px;
+    font-size: 11px;
+    display: flex;
+    gap: 12px;
+}
+
+.status-section {
+    padding: 1px 6px;
+    border: 1px solid;
+    border-color: #808080 #fff #fff #808080;
+}
+
+/* ============================================
+   Taskbar Styles
+   ============================================ */
+
+.taskbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 32px;
+    background: #c0c0c0;
+    border-top: 2px solid #fff;
+    display: flex;
+    align-items: center;
+    padding: 2px 4px;
+    gap: 4px;
+    z-index: 1000;
+}
+
+.taskbar-button {
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #fff #000 #000 #fff;
+    padding: 4px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+    color: #000;
+    min-width: 120px;
+}
+
+.taskbar-button:hover {
+    background: #d4d4d4;
+}
+
+.taskbar-button:active,
+.taskbar-button.active {
+    border-color: #000 #fff #fff #000;
+    padding: 5px 7px 3px 9px;
+}
+
+/* ============================================
+   Empty State
+   ============================================ */
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.empty-state h2 {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #000080;
+}
+
+.empty-state p {
+    font-size: 11px;
+    color: #666;
+}
+
+/* ============================================
+   Scrollbar Styles (Webkit)
+   ============================================ */
+
+::-webkit-scrollbar {
+    width: 16px;
+    height: 16px;
+}
+
+::-webkit-scrollbar-track {
+    background: white;
+    border: 1px solid #808080;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #fff #000 #000 #fff;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #d4d4d4;
+}
+
+::-webkit-scrollbar-thumb:active {
+    border-color: #000 #fff #fff #000;
+}
+
+::-webkit-scrollbar-button {
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #fff #000 #000 #fff;
+    height: 16px;
+    width: 16px;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .media-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 16px;
+        padding: 12px;
+    }
+
+    .media-thumbnail-container,
+    .media-thumbnail,
+    .media-thumbnail-placeholder {
+        width: 80px;
+        height: 80px;
+    }
+
+    .media-thumbnail-placeholder {
+        font-size: 36px;
+    }
+
+    .detail-layout {
+        grid-template-columns: 1fr;
+        padding: 12px;
+        gap: 16px;
+    }
+
+    .detail-poster-section {
+        max-width: 300px;
+        margin: 0 auto;
+    }
+
+    .taskbar {
+        position: relative;
+        margin-bottom: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .media-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+
+    .window {
+        box-shadow: none;
+    }
+
+    .metadata-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+.beveled-in {
+    border: 2px solid;
+    border-color: #808080 #fff #fff #808080;
+}
+
+.beveled-out {
+    border: 2px solid;
+    border-color: #fff #000 #000 #fff;
+}
+
+.no-description {
+    color: #808080;
+    font-style: italic;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}

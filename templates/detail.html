@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Media.DisplayTitle}} - Shelf</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: sans-serif; padding: 20px; }
+        .back { text-decoration: none; color: #666; margin-bottom: 20px; display: inline-block; }
+        .layout { display: grid; grid-template-columns: 200px 1fr; gap: 30px; }
+        .poster { width: 100%; display: block; }
+        .placeholder { width: 100%; aspect-ratio: 2/3; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 64px; }
+        h1 { margin-bottom: 10px; }
+        .meta { color: #666; margin-bottom: 20px; }
+        .meta-item { margin-bottom: 5px; }
+        .genres { margin: 20px 0; }
+        .genre { display: inline-block; background: #eee; padding: 5px 10px; margin-right: 5px; margin-bottom: 5px; border-radius: 3px; font-size: 14px; }
+        .description { line-height: 1.6; }
+        @media (max-width: 600px) {
+            .layout { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back">← Back</a>
+    <div class="layout">
+        <div>
+            {{if .HasPoster}}
+            <img src="{{.Media.PosterURL}}" alt="{{.Media.DisplayTitle}}" class="poster">
+            {{else}}
+            <div class="placeholder">
+                {{if eq .Media.Type 0}}🎬{{else}}📺{{end}}
+            </div>
+            {{end}}
+        </div>
+        <div>
+            <h1>{{.Media.DisplayTitle}}</h1>
+            <div class="meta">
+                <div class="meta-item"><strong>Type:</strong> {{.Media.Type}}</div>
+                {{if gt .Media.Year 0}}
+                <div class="meta-item"><strong>Year:</strong> {{.Media.Year}}</div>
+                {{end}}
+                <div class="meta-item"><strong>Disks:</strong> {{.Media.DiskCount}}</div>
+                {{if .Media.TMDBID}}
+                <div class="meta-item"><strong>TMDB:</strong> <a href="https://www.themoviedb.org/{{if eq .Media.Type 0}}movie{{else}}tv{{end}}/{{.Media.TMDBID}}" target="_blank" rel="noopener">{{.Media.TMDBID}}</a></div>
+                {{end}}
+            </div>
+            {{if .Genres}}
+            <div class="genres">
+                {{range .Genres}}
+                <span class="genre">{{.}}</span>
+                {{end}}
+            </div>
+            {{end}}
+            {{if .Description}}
+            <div class="description">{{.Description}}</div>
+            {{else}}
+            <div class="description" style="color: #999;">No description available</div>
+            {{end}}
+        </div>
+    </div>
+</body>
+</html>
