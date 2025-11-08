@@ -46,11 +46,11 @@ func TestIntegrationScanAndServe(t *testing.T) {
 
 	// Verify expected content is present
 	expectedContent := []string{
-		"Media Backup Manager",
+		"Shelf",
 		"War of the Worlds",
 		"Better Call Saul",
 		"No TMDB",
-		"media-grid", // Check for grid layout
+		"grid", // Check for grid layout
 	}
 
 	for _, expected := range expectedContent {
