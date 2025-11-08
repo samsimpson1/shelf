@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -44,9 +45,10 @@ func main() {
 
 	// Create scanner with optional TMDB client
 	var scanner *Scanner
+	var tmdbClient *TMDBClient
 	if tmdbAPIKey != "" {
 		log.Println("TMDB API key configured, poster fetching enabled")
-		tmdbClient := NewTMDBClient(tmdbAPIKey)
+		tmdbClient = NewTMDBClient(tmdbAPIKey)
 		scanner = NewScannerWithTMDB(mediaDir, tmdbClient)
 	} else {
 		scanner = NewScanner(mediaDir)
@@ -61,7 +63,12 @@ func main() {
 	log.Printf("Found %d media items", len(mediaList))
 
 	// Load templates
-	tmpl, err := template.ParseFiles("templates/index.html", "templates/detail.html")
+	tmpl, err := template.ParseFiles(
+		"templates/index.html",
+		"templates/detail.html",
+		"templates/search.html",
+		"templates/confirm.html",
+	)
 	if err != nil {
 		log.Fatalf("Failed to load templates: %v", err)
 	}
@@ -70,11 +77,31 @@ func main() {
 	app := NewApp(mediaList, tmpl, mediaDir)
 	app.SetDevMode(devMode)
 
+	// Set TMDB client if available
+	if tmdbClient != nil {
+		app.SetTMDBClient(tmdbClient)
+	}
+
 	// Setup HTTP routes
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", app.IndexHandler)
-	mux.HandleFunc("/media/", app.DetailHandler)
 	mux.HandleFunc("/posters/", app.PosterHandler)
+
+	// TMDB routes (must come before the general /media/ route)
+	mux.HandleFunc("/media/", func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		// Route to specific handlers based on path suffix
+		if strings.HasSuffix(path, "/search-tmdb") {
+			app.SearchTMDBHandler(w, r)
+		} else if strings.HasSuffix(path, "/confirm-tmdb") {
+			app.ConfirmTMDBHandler(w, r)
+		} else if strings.HasSuffix(path, "/set-tmdb") {
+			app.SaveTMDBHandler(w, r)
+		} else {
+			// Default to detail handler
+			app.DetailHandler(w, r)
+		}
+	})
 
 	// Serve static files (CSS, etc.)
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))

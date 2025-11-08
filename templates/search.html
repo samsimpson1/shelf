@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search TMDB - {{.Media.DisplayTitle}} - Shelf</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .back { text-decoration: none; color: #666; margin-bottom: 20px; display: inline-block; }
+        h1 { margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+
+        .search-section { background: #f5f5f5; padding: 20px; border-radius: 5px; margin-bottom: 30px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 3px; font-size: 14px; }
+        .btn { display: inline-block; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 14px; border: none; cursor: pointer; }
+        .btn-primary { background: #2196F3; color: white; }
+        .btn-primary:hover { background: #1976D2; }
+
+        .manual-entry { margin-top: 20px; }
+        .collapsible { cursor: pointer; color: #2196F3; text-decoration: underline; }
+        .manual-form { display: none; margin-top: 15px; padding: 15px; background: white; border-radius: 3px; }
+        .manual-form.open { display: block; }
+
+        .results { margin-top: 30px; }
+        .results-header { margin-bottom: 20px; }
+        .results-grid { display: grid; gap: 20px; }
+        .result-item { display: grid; grid-template-columns: 100px 1fr auto; gap: 15px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; align-items: start; }
+        .result-poster { width: 100px; }
+        .result-poster img { width: 100%; display: block; border-radius: 3px; }
+        .result-placeholder { width: 100%; aspect-ratio: 2/3; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 32px; border-radius: 3px; }
+        .result-info h3 { margin-bottom: 5px; font-size: 16px; }
+        .result-meta { color: #666; font-size: 14px; margin-bottom: 10px; }
+        .result-overview { font-size: 14px; line-height: 1.4; color: #333; }
+        .result-overview.truncated { max-height: 60px; overflow: hidden; position: relative; }
+        .result-overview.truncated::after { content: '...'; position: absolute; bottom: 0; right: 0; background: white; padding-left: 20px; }
+        .result-actions { display: flex; align-items: center; }
+        .btn-select { background: #4CAF50; color: white; }
+        .btn-select:hover { background: #45a049; }
+
+        .empty-state { text-align: center; padding: 40px; color: #999; }
+        .empty-state-icon { font-size: 48px; margin-bottom: 10px; }
+
+        .error { background: #ffebee; color: #c62828; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+
+        @media (max-width: 768px) {
+            .result-item { grid-template-columns: 80px 1fr; }
+            .result-actions { grid-column: 2; margin-top: 10px; }
+        }
+    </style>
+    <script>
+        function toggleManualEntry() {
+            const form = document.getElementById('manual-form');
+            form.classList.toggle('open');
+        }
+    </script>
+</head>
+<body>
+    <a href="/media/{{.Media.Slug}}" class="back">← Back to {{.Media.DisplayTitle}}</a>
+
+    <h1>Search for TMDB ID</h1>
+    <p class="subtitle">Find the correct TMDB entry for <strong>{{.Media.DisplayTitle}}</strong></p>
+
+    {{if .Error}}
+    <div class="error">{{.Error}}</div>
+    {{end}}
+
+    <div class="search-section">
+        <form method="GET" action="/media/{{.Media.Slug}}/search-tmdb">
+            <div class="form-group">
+                <label for="query">Search Query</label>
+                <input type="text" id="query" name="query" value="{{.Query}}" placeholder="Enter title to search..." required>
+            </div>
+            {{if eq .Media.Type 0}}
+            <div class="form-group">
+                <label for="year">Year (optional)</label>
+                <input type="text" id="year" name="year" value="{{.Year}}" placeholder="{{.Media.Year}}">
+            </div>
+            {{end}}
+            <button type="submit" class="btn btn-primary">Search TMDB</button>
+        </form>
+
+        <div class="manual-entry">
+            <span class="collapsible" onclick="toggleManualEntry()">Or enter TMDB ID manually</span>
+            <div id="manual-form" class="manual-form">
+                <form method="POST" action="/media/{{.Media.Slug}}/set-tmdb">
+                    <div class="form-group">
+                        <label for="tmdb_id">TMDB ID</label>
+                        <input type="text" id="tmdb_id" name="tmdb_id" placeholder="Enter numeric TMDB ID" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Set TMDB ID</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{if .Results}}
+    <div class="results">
+        <div class="results-header">
+            <h2>Search Results ({{len .Results}})</h2>
+        </div>
+        <div class="results-grid">
+            {{range .Results}}
+            <div class="result-item">
+                <div class="result-poster">
+                    {{if .PosterPath}}
+                    <img src="https://image.tmdb.org/t/p/w200{{.PosterPath}}" alt="{{.GetTitle}}">
+                    {{else}}
+                    <div class="result-placeholder">{{if $.Media.Type}}📺{{else}}🎬{{end}}</div>
+                    {{end}}
+                </div>
+                <div class="result-info">
+                    <h3>{{.GetTitle}}</h3>
+                    <div class="result-meta">
+                        {{.GetDate}}
+                        {{if .Popularity}} • Popularity: {{printf "%.1f" .Popularity}}{{end}}
+                    </div>
+                    {{if .Overview}}
+                    <div class="result-overview truncated">{{.Overview}}</div>
+                    {{else}}
+                    <div class="result-overview" style="color: #999;">No overview available</div>
+                    {{end}}
+                </div>
+                <div class="result-actions">
+                    <a href="/media/{{$.Media.Slug}}/confirm-tmdb?id={{.ID}}" class="btn btn-select">Select This</a>
+                </div>
+            </div>
+            {{end}}
+        </div>
+    </div>
+    {{else if .Query}}
+    <div class="empty-state">
+        <div class="empty-state-icon">🔍</div>
+        <h2>No Results Found</h2>
+        <p>Try searching with a different title or year</p>
+    </div>
+    {{end}}
+</body>
+</html>

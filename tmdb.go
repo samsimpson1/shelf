@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -56,6 +57,56 @@ type TVResponse struct {
 	Genres       []Genre `json:"genres"`
 }
 
+// MovieSearchResult represents a movie search result from TMDB
+type MovieSearchResult struct {
+	ID          int     `json:"id"`
+	Title       string  `json:"title"`
+	ReleaseDate string  `json:"release_date"`
+	Overview    string  `json:"overview"`
+	PosterPath  string  `json:"poster_path"`
+	Popularity  float64 `json:"popularity"`
+}
+
+// GetTitle returns the title for template rendering
+func (m MovieSearchResult) GetTitle() string {
+	return m.Title
+}
+
+// GetDate returns the release date for template rendering
+func (m MovieSearchResult) GetDate() string {
+	return m.ReleaseDate
+}
+
+// TVSearchResult represents a TV show search result from TMDB
+type TVSearchResult struct {
+	ID           int     `json:"id"`
+	Name         string  `json:"name"`
+	FirstAirDate string  `json:"first_air_date"`
+	Overview     string  `json:"overview"`
+	PosterPath   string  `json:"poster_path"`
+	Popularity   float64 `json:"popularity"`
+}
+
+// GetTitle returns the name for template rendering (matches MovieSearchResult)
+func (t TVSearchResult) GetTitle() string {
+	return t.Name
+}
+
+// GetDate returns the first air date for template rendering (matches MovieSearchResult)
+func (t TVSearchResult) GetDate() string {
+	return t.FirstAirDate
+}
+
+// MovieSearchResponse represents the TMDB API response for movie search
+type MovieSearchResponse struct {
+	Results []MovieSearchResult `json:"results"`
+}
+
+// TVSearchResponse represents the TMDB API response for TV search
+type TVSearchResponse struct {
+	Results []TVSearchResult `json:"results"`
+}
+
 // FetchMovieMetadata fetches metadata for a movie from TMDB
 func (c *TMDBClient) FetchMovieMetadata(movieID string) (*MovieResponse, error) {
 	url := fmt.Sprintf("%s/movie/%s?api_key=%s", tmdbAPIBaseURL, movieID, c.apiKey)
@@ -98,6 +149,134 @@ func (c *TMDBClient) FetchTVMetadata(tvID string) (*TVResponse, error) {
 	}
 
 	return &tv, nil
+}
+
+// SearchMovies searches for movies on TMDB by title and optional year
+// Returns up to 20 results sorted by popularity
+func (c *TMDBClient) SearchMovies(query string, year int) ([]MovieSearchResult, error) {
+	if query == "" {
+		return nil, fmt.Errorf("search query cannot be empty")
+	}
+
+	// Build URL with query parameter (URL-encoded)
+	searchURL := fmt.Sprintf("%s/search/movie?api_key=%s&query=%s", tmdbAPIBaseURL, c.apiKey, url.QueryEscape(query))
+
+	// Add year parameter if provided
+	if year > 0 {
+		searchURL = fmt.Sprintf("%s&year=%d", searchURL, year)
+	}
+
+	resp, err := c.httpClient.Get(searchURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search movies: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("TMDB API returned status %d for movie search", resp.StatusCode)
+	}
+
+	var searchResp MovieSearchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&searchResp); err != nil {
+		return nil, fmt.Errorf("failed to decode movie search response: %w", err)
+	}
+
+	// Limit to 20 results
+	results := searchResp.Results
+	if len(results) > 20 {
+		results = results[:20]
+	}
+
+	return results, nil
+}
+
+// SearchTV searches for TV shows on TMDB by name
+// Returns up to 20 results sorted by popularity
+func (c *TMDBClient) SearchTV(query string) ([]TVSearchResult, error) {
+	if query == "" {
+		return nil, fmt.Errorf("search query cannot be empty")
+	}
+
+	searchURL := fmt.Sprintf("%s/search/tv?api_key=%s&query=%s", tmdbAPIBaseURL, c.apiKey, url.QueryEscape(query))
+
+	resp, err := c.httpClient.Get(searchURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search TV shows: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("TMDB API returned status %d for TV search", resp.StatusCode)
+	}
+
+	var searchResp TVSearchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&searchResp); err != nil {
+		return nil, fmt.Errorf("failed to decode TV search response: %w", err)
+	}
+
+	// Limit to 20 results
+	results := searchResp.Results
+	if len(results) > 20 {
+		results = results[:20]
+	}
+
+	return results, nil
+}
+
+// WriteTMDBID writes a TMDB ID to a tmdb.txt file in the specified directory
+// Creates or overwrites the file with permissions 0644
+func WriteTMDBID(tmdbID, mediaPath string) error {
+	if tmdbID == "" {
+		return fmt.Errorf("TMDB ID cannot be empty")
+	}
+
+	// Validate path to prevent directory traversal
+	cleanPath := filepath.Clean(mediaPath)
+	if strings.Contains(cleanPath, "..") {
+		return fmt.Errorf("invalid path: directory traversal detected")
+	}
+
+	// Ensure the directory exists
+	if _, err := os.Stat(cleanPath); os.IsNotExist(err) {
+		return fmt.Errorf("directory does not exist: %s", cleanPath)
+	}
+
+	// Create the tmdb.txt file path
+	tmdbPath := filepath.Join(cleanPath, "tmdb.txt")
+
+	// Write the TMDB ID to the file
+	err := os.WriteFile(tmdbPath, []byte(tmdbID), 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write tmdb.txt: %w", err)
+	}
+
+	log.Printf("Wrote TMDB ID %s to %s", tmdbID, tmdbPath)
+	return nil
+}
+
+// ValidateTMDBID verifies that a TMDB ID exists and matches the expected media type
+// Returns an error if the ID doesn't exist or the type mismatches
+func (c *TMDBClient) ValidateTMDBID(tmdbID string, mediaType MediaType) error {
+	if tmdbID == "" {
+		return fmt.Errorf("TMDB ID cannot be empty")
+	}
+
+	// Attempt to fetch metadata based on media type
+	if mediaType == Film {
+		_, err := c.FetchMovieMetadata(tmdbID)
+		if err != nil {
+			return fmt.Errorf("invalid movie ID or API error: %w", err)
+		}
+		return nil
+	} else if mediaType == TV {
+		_, err := c.FetchTVMetadata(tmdbID)
+		if err != nil {
+			return fmt.Errorf("invalid TV show ID or API error: %w", err)
+		}
+		return nil
+	}
+
+	return fmt.Errorf("unknown media type: %v", mediaType)
 }
 
 // DownloadPoster downloads a poster image from TMDB and saves it to the specified directory
@@ -194,7 +373,25 @@ func (c *TMDBClient) saveGenres(genres []Genre, destDir string) error {
 	return nil
 }
 
-// FetchAndSaveMetadata fetches metadata and downloads poster, description, and genres for a media item
+// saveTitle saves the title text to title.txt
+func (c *TMDBClient) saveTitle(title, destDir string) error {
+	if title == "" {
+		return fmt.Errorf("title is empty")
+	}
+
+	destPath := filepath.Join(destDir, "title.txt")
+
+	// Write the title to file
+	err := os.WriteFile(destPath, []byte(title), 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write title file: %w", err)
+	}
+
+	log.Printf("Saved title to %s", destPath)
+	return nil
+}
+
+// FetchAndSaveMetadata fetches metadata and downloads poster, description, genres, and title for a media item
 func (c *TMDBClient) FetchAndSaveMetadata(media *Media) error {
 	if media.TMDBID == "" {
 		return fmt.Errorf("no TMDB ID for media: %s", media.Title)
@@ -218,8 +415,12 @@ func (c *TMDBClient) FetchAndSaveMetadata(media *Media) error {
 	_, genreErr := os.Stat(genrePath)
 	genreExists := genreErr == nil
 
+	titlePath := filepath.Join(media.Path, "title.txt")
+	_, titleErr := os.Stat(titlePath)
+	titleExists := titleErr == nil
+
 	// If all files exist, skip fetching
-	if posterExists && descriptionExists && genreExists {
+	if posterExists && descriptionExists && genreExists && titleExists {
 		log.Printf("All metadata files already exist for %s, skipping download", media.Title)
 		return nil
 	}
@@ -227,6 +428,7 @@ func (c *TMDBClient) FetchAndSaveMetadata(media *Media) error {
 	var posterPath string
 	var overview string
 	var genres []Genre
+	var title string
 	var err error
 
 	// Fetch metadata based on media type
@@ -238,6 +440,7 @@ func (c *TMDBClient) FetchAndSaveMetadata(media *Media) error {
 		posterPath = movie.PosterPath
 		overview = movie.Overview
 		genres = movie.Genres
+		title = movie.Title
 	} else if media.Type == TV {
 		tv, err := c.FetchTVMetadata(media.TMDBID)
 		if err != nil {
@@ -246,6 +449,7 @@ func (c *TMDBClient) FetchAndSaveMetadata(media *Media) error {
 		posterPath = tv.PosterPath
 		overview = tv.Overview
 		genres = tv.Genres
+		title = tv.Name
 	}
 
 	// Download the poster if it doesn't exist
@@ -277,6 +481,17 @@ func (c *TMDBClient) FetchAndSaveMetadata(media *Media) error {
 		} else {
 			if err = c.saveGenres(genres, media.Path); err != nil {
 				log.Printf("Warning: Failed to save genres for %s: %v", media.Title, err)
+			}
+		}
+	}
+
+	// Save title if it doesn't exist
+	if !titleExists {
+		if title == "" {
+			log.Printf("Warning: No title available for %s", media.Title)
+		} else {
+			if err = c.saveTitle(title, media.Path); err != nil {
+				log.Printf("Warning: Failed to save title for %s: %v", media.Title, err)
 			}
 		}
 	}

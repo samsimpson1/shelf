@@ -17,8 +17,17 @@
         .genres { margin: 20px 0; }
         .genre { display: inline-block; background: #eee; padding: 5px 10px; margin-right: 5px; margin-bottom: 5px; border-radius: 3px; font-size: 14px; }
         .description { line-height: 1.6; }
+        .tmdb-actions { margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
+        .btn { display: inline-block; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 14px; border: none; cursor: pointer; }
+        .btn-primary { background: #2196F3; color: white; }
+        .btn-primary:hover { background: #1976D2; }
+        .btn-secondary { background: #eee; color: #333; margin-left: 10px; }
+        .btn-secondary:hover { background: #ddd; }
+        .warning { color: #ff9800; font-size: 14px; margin-top: 10px; display: block; }
         @media (max-width: 600px) {
             .layout { grid-template-columns: 1fr; }
+            .btn { display: block; margin: 5px 0; text-align: center; }
+            .btn-secondary { margin-left: 0; }
         }
     </style>
 </head>
@@ -58,6 +67,15 @@
             {{else}}
             <div class="description" style="color: #999;">No description available</div>
             {{end}}
+
+            <div class="tmdb-actions">
+                {{if .Media.TMDBID}}
+                <a href="/media/{{.Media.Slug}}/search-tmdb" class="btn btn-secondary">Change TMDB ID</a>
+                <span class="warning">⚠️ Changing the TMDB ID will replace existing metadata</span>
+                {{else}}
+                <a href="/media/{{.Media.Slug}}/search-tmdb" class="btn btn-primary">Search for TMDB ID</a>
+                {{end}}
+            </div>
         </div>
     </div>
 </body>

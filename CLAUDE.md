@@ -27,9 +27,9 @@ A simple Go web application that scans and displays media disk backups (BDMV, DV
 
 3. **TMDB Client** ([tmdb.go](tmdb.go))
    - TMDB API integration for fetching metadata
-   - Movie and TV show metadata retrieval (overview, genres, poster)
+   - Movie and TV show metadata retrieval (overview, genres, poster, title)
    - Poster image downloading and saving
-   - Description (overview) and genre list saving
+   - Description (overview), genre list, and title saving
    - Automatic detection of existing metadata files
    - Smart caching to avoid re-downloading
 
@@ -57,7 +57,8 @@ Title (Year) [Film]/
   ├── tmdb.txt (optional - contains TMDB ID)
   ├── poster.jpg (optional - auto-downloaded from TMDB)
   ├── description.txt (optional - auto-downloaded from TMDB)
-  └── genre.txt (optional - auto-downloaded from TMDB)
+  ├── genre.txt (optional - auto-downloaded from TMDB)
+  └── title.txt (optional - auto-downloaded from TMDB)
 ```
 
 **TV Shows:**
@@ -68,7 +69,8 @@ Title [TV]/
   ├── tmdb.txt (optional - contains TMDB ID)
   ├── poster.jpg (optional - auto-downloaded from TMDB)
   ├── description.txt (optional - auto-downloaded from TMDB)
-  └── genre.txt (optional - auto-downloaded from TMDB)
+  ├── genre.txt (optional - auto-downloaded from TMDB)
+  └── title.txt (optional - auto-downloaded from TMDB)
 ```
 
 ### Regex Patterns
@@ -102,12 +104,13 @@ When `TMDB_API_KEY` is configured:
 
 - Metadata is automatically fetched during the initial directory scan
 - Only media items with a `tmdb.txt` file will have metadata fetched
-- Three files are saved to each media's directory:
+- Four files are saved to each media's directory:
   - `poster.jpg` (or .png, .webp) - Movie/TV poster in "original" size
   - `description.txt` - Overview/synopsis of the movie or TV show
   - `genre.txt` - Comma-separated list of genres (e.g., "Action, Drama, Thriller")
-- If all three files already exist in the directory, they will not be re-downloaded
-- Missing files are fetched individually (e.g., if only poster exists, description and genres will be fetched)
+  - `title.txt` - Official title from TMDB (movie.title or tv.name)
+- If all four files already exist in the directory, they will not be re-downloaded
+- Missing files are fetched individually (e.g., if only poster exists, description, genres, and title will be fetched)
 - Failed metadata fetches log warnings but don't stop the scan
 - Single API call fetches all metadata efficiently
 
@@ -120,11 +123,12 @@ The project achieves 54.7% code coverage with comprehensive tests:
 - **[models_test.go](models_test.go)** - Tests for MediaType string representation and Media display methods
 - **[scanner_test.go](scanner_test.go)** - Tests for directory parsing, disk counting, TMDB ID reading, scanner with TMDB client, and error handling
 - **[handlers_test.go](handlers_test.go)** - Tests for HTTP handlers, template rendering, and sorting logic
-- **[tmdb_test.go](tmdb_test.go)** - Tests for TMDB client, metadata fetching (movies/TV), poster/description/genre saving, and file caching
+- **[tmdb_test.go](tmdb_test.go)** - Tests for TMDB client, metadata fetching (movies/TV), poster/description/genre/title saving, and file caching
 
 ### Integration Tests
 
 - **[integration_test.go](integration_test.go)** - End-to-end tests covering full scan-and-serve workflows
+- **[tmdb_integration_test.go](tmdb_integration_test.go)** - Real TMDB API integration tests (requires TMDB_API_KEY)
 
 ### Test Fixtures
 
@@ -141,7 +145,54 @@ go test -v -cover ./...
 
 # Run with race detection
 go test -race ./...
+
+# Skip integration tests (fast mode)
+go test -short -v ./...
+
+# Run TMDB integration tests with real API
+TMDB_API_KEY=your_api_key_here go test -v -run TestIntegration
+
+# Run all tests including TMDB integration tests
+TMDB_API_KEY=your_api_key_here go test -v ./...
 ```
+
+### TMDB Integration Tests
+
+The [tmdb_integration_test.go](tmdb_integration_test.go) file contains integration tests that make real API calls to TMDB:
+
+**Test Coverage:**
+- Movie metadata fetching (Fight Club - ID 550)
+- TV metadata fetching (Better Call Saul - ID 60059)
+- Movie search with and without year filtering
+- TV show search
+- Poster download and validation
+- Description, genre, and title saving
+- Full metadata workflow (all four files)
+- TMDB ID validation
+- Error handling with invalid IDs
+- File caching behavior (skipping existing metadata)
+- Result limiting (max 20 results)
+
+**Running TMDB Integration Tests:**
+
+These tests require a valid TMDB API key and are automatically skipped in two cases:
+1. When running with `go test -short` (short mode)
+2. When the `TMDB_API_KEY` environment variable is not set
+
+To run these tests:
+
+```bash
+# Set your TMDB API key (get one at https://www.themoviedb.org/settings/api)
+export TMDB_API_KEY=your_api_key_here
+
+# Run all TMDB integration tests
+go test -v -run TestIntegration
+
+# Run a specific TMDB integration test
+go test -v -run TestIntegrationFetchMovieMetadata
+```
+
+**Note:** These tests make real HTTP requests to the TMDB API and will count against your API rate limits. They are designed to be comprehensive but respectful of API usage.
 
 ## Building and Running
 
