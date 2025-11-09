@@ -1,10 +1,10 @@
 ---
 id: task-009
 title: Add 'Copy Play Command' button to disk list
-status: To Do
+status: Done
 assignee: []
 created_date: '2025-11-09 11:09'
-updated_date: '2025-11-09 11:15'
+updated_date: '2025-11-09 12:03'
 labels: []
 dependencies:
   - task-008
@@ -83,20 +83,20 @@ vlc bluray:///mnt/media/War of the Worlds (2025) [Film]/Disk [Blu-Ray UHD]
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 PLAY_URL_PREFIX environment variable added and configurable
-- [ ] #2 Help text updated to document PLAY_URL_PREFIX environment variable
-- [ ] #3 Disk struct includes Path field storing disk directory path
-- [ ] #4 Disk.PlayCommand() method generates correct VLC command format
-- [ ] #5 Copy Play Command button displayed for each disk in the list
-- [ ] #6 Button click copies VLC command to clipboard
-- [ ] #7 Visual feedback shown after successful copy (toast/button text change)
-- [ ] #8 Correct protocol used based on disk format (bluray://, dvd://, file://)
-- [ ] #9 JavaScript clipboard API implemented with fallback for older browsers
-- [ ] #10 Error handling for clipboard failures
-- [ ] #11 PLAY_URL_PREFIX passed to templates and used in command generation
-- [ ] #12 All existing tests updated and passing
+- [x] #1 PLAY_URL_PREFIX environment variable added and configurable
+- [x] #2 Help text updated to document PLAY_URL_PREFIX environment variable
+- [x] #3 Disk struct includes Path field storing disk directory path
+- [x] #4 Disk.PlayCommand() method generates correct VLC command format
+- [x] #5 Copy Play Command button displayed for each disk in the list
+- [x] #6 Button click copies VLC command to clipboard
+- [x] #7 Visual feedback shown after successful copy (toast/button text change)
+- [x] #8 Correct protocol used based on disk format (bluray://, dvd://, file://)
+- [x] #9 JavaScript clipboard API implemented with fallback for older browsers
+- [x] #10 Error handling for clipboard failures
+- [x] #11 PLAY_URL_PREFIX passed to templates and used in command generation
+- [x] #12 All existing tests updated and passing
 
-- [ ] #13 New tests added for PlayCommand method and protocol selection
+- [x] #13 New tests added for PlayCommand method and protocol selection
 
-- [ ] #14 Template test coverage maintained or improved (no decrease in templates_test.go coverage)
+- [x] #14 Template test coverage maintained or improved (no decrease in templates_test.go coverage)
 <!-- AC:END -->
