@@ -14,21 +14,23 @@ import (
 
 // App holds the application state
 type App struct {
-	mediaList  []Media
-	templates  *template.Template
-	mediaDir   string
-	devMode    bool // Enable template hot-reloading in development
-	tmdbClient *TMDBClient
+	mediaList     []Media
+	templates     *template.Template
+	mediaDir      string
+	devMode       bool // Enable template hot-reloading in development
+	tmdbClient    *TMDBClient
+	playURLPrefix string // URL prefix for play commands
 }
 
 // NewApp creates a new App instance
 func NewApp(mediaList []Media, templates *template.Template, mediaDir string) *App {
 	return &App{
-		mediaList:  mediaList,
-		templates:  templates,
-		mediaDir:   mediaDir,
-		devMode:    false,
-		tmdbClient: nil,
+		mediaList:     mediaList,
+		templates:     templates,
+		mediaDir:      mediaDir,
+		devMode:       false,
+		tmdbClient:    nil,
+		playURLPrefix: "",
 	}
 }
 
@@ -40,6 +42,11 @@ func (app *App) SetTMDBClient(client *TMDBClient) {
 // SetDevMode enables or disables development mode (template hot-reloading)
 func (app *App) SetDevMode(enabled bool) {
 	app.devMode = enabled
+}
+
+// SetPlayURLPrefix sets the URL prefix for play commands
+func (app *App) SetPlayURLPrefix(prefix string) {
+	app.playURLPrefix = prefix
 }
 
 // loadTemplates reloads templates from disk (used in dev mode)
@@ -158,15 +165,17 @@ func (app *App) DetailHandler(w http.ResponseWriter, r *http.Request) {
 	_, hasPoster := media.FindPosterFile()
 
 	data := struct {
-		Media       *Media
-		Description string
-		Genres      []string
-		HasPoster   bool
+		Media         *Media
+		Description   string
+		Genres        []string
+		HasPoster     bool
+		PlayURLPrefix string
 	}{
-		Media:       media,
-		Description: description,
-		Genres:      genres,
-		HasPoster:   hasPoster,
+		Media:         media,
+		Description:   description,
+		Genres:        genres,
+		HasPoster:     hasPoster,
+		PlayURLPrefix: app.playURLPrefix,
 	}
 
 	err := tmpl.ExecuteTemplate(w, "detail.html", data)

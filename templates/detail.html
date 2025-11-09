@@ -24,6 +24,17 @@
         .btn-secondary { background: #eee; color: #333; margin-left: 10px; }
         .btn-secondary:hover { background: #ddd; }
         .warning { color: #ff9800; font-size: 14px; margin-top: 10px; display: block; }
+        .disk-list { margin-top: 30px; }
+        .disk-list h2 { font-size: 18px; margin-bottom: 15px; }
+        .disk-table { width: 100%; border-collapse: collapse; }
+        .disk-table th { text-align: left; padding: 10px; border-bottom: 2px solid #ddd; background: #f5f5f5; }
+        .disk-table td { padding: 10px; border-bottom: 1px solid #eee; }
+        .disk-table tr:last-child td { border-bottom: none; }
+        .no-disks { color: #999; font-style: italic; }
+        .copy-btn { background: #4CAF50; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; }
+        .copy-btn:hover { background: #45a049; }
+        .copy-btn.copied { background: #2196F3; }
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 15px 20px; border-radius: 5px; display: none; z-index: 1000; }
         @media (max-width: 600px) {
             .layout { grid-template-columns: 1fr; }
             .btn { display: block; margin: 5px 0; text-align: center; }
@@ -68,6 +79,41 @@
             <div class="description" style="color: #999;">No description available</div>
             {{end}}
 
+            {{if .Media.Disks}}
+            <div class="disk-list">
+                <h2>Disks</h2>
+                <table class="disk-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Format</th>
+                            <th>Size</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Media.Disks}}
+                        <tr>
+                            <td>{{.Name}}</td>
+                            <td>{{.Format}}</td>
+                            <td>{{printf "%.1f GB" .SizeGB}}</td>
+                            <td>
+                                <button class="copy-btn" onclick="copyPlayCommand('{{.PlayCommand $.PlayURLPrefix}}')">
+                                    Copy Play Command
+                                </button>
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+            {{else}}
+            <div class="disk-list">
+                <h2>Disks</h2>
+                <p class="no-disks">No disks found</p>
+            </div>
+            {{end}}
+
             <div class="tmdb-actions">
                 {{if .Media.TMDBID}}
                 <a href="/media/{{.Media.Slug}}/search-tmdb" class="btn btn-secondary">Change TMDB ID</a>
@@ -78,5 +124,61 @@
             </div>
         </div>
     </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        function copyPlayCommand(command) {
+            // Try modern clipboard API first
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(command)
+                    .then(() => {
+                        showToast('Copied to clipboard!');
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy:', err);
+                        // Fallback to execCommand
+                        fallbackCopy(command);
+                    });
+            } else {
+                // Fallback for older browsers
+                fallbackCopy(command);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast('Copied to clipboard!');
+                } else {
+                    showToast('Failed to copy', true);
+                }
+            } catch (err) {
+                console.error('Fallback copy failed:', err);
+                showToast('Failed to copy', true);
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            toast.style.background = isError ? '#f44336' : '#333';
+
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+    </script>
 </body>
 </html>

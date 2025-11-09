@@ -43,7 +43,7 @@ func setupTestData(t *testing.T) string {
 	if err := os.Mkdir(tvDisk1, 0755); err != nil {
 		t.Fatalf("Failed to create TV disk 1 directory: %v", err)
 	}
-	tvDisk2 := filepath.Join(tvDir, "Series 1 Disk 2 [Blu-Ray]")
+	tvDisk2 := filepath.Join(tvDir, "Series 1 Disk 2 [Blu-Ray UHD]")
 	if err := os.Mkdir(tvDisk2, 0755); err != nil {
 		t.Fatalf("Failed to create TV disk 2 directory: %v", err)
 	}

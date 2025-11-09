@@ -210,15 +210,17 @@ func TestDetailTemplateWithFullData(t *testing.T) {
 	}
 
 	data := struct {
-		Media       *Media
-		Description string
-		Genres      []string
-		HasPoster   bool
+		Media         *Media
+		Description   string
+		Genres        []string
+		HasPoster     bool
+		PlayURLPrefix string
 	}{
-		Media:       media,
-		Description: "A computer hacker learns about the true nature of reality.",
-		Genres:      []string{"Action", "Science Fiction"},
-		HasPoster:   true,
+		Media:         media,
+		Description:   "A computer hacker learns about the true nature of reality.",
+		Genres:        []string{"Action", "Science Fiction"},
+		HasPoster:     true,
+		PlayURLPrefix: "",
 	}
 
 	output := executeTemplate(t, tmpl, data)
@@ -256,15 +258,17 @@ func TestDetailTemplateWithNoPoster(t *testing.T) {
 	}
 
 	data := struct {
-		Media       *Media
-		Description string
-		Genres      []string
-		HasPoster   bool
+		Media         *Media
+		Description   string
+		Genres        []string
+		HasPoster     bool
+		PlayURLPrefix string
 	}{
-		Media:       media,
+		Media:         media,
 		Description: "Test description",
-		Genres:      []string{"Drama"},
-		HasPoster:   false,
+		Genres:        []string{"Drama"},
+		HasPoster:     false,
+		PlayURLPrefix: "",
 	}
 
 	output := executeTemplate(t, tmpl, data)
@@ -288,15 +292,17 @@ func TestDetailTemplateWithNoDescription(t *testing.T) {
 	}
 
 	data := struct {
-		Media       *Media
-		Description string
-		Genres      []string
-		HasPoster   bool
+		Media         *Media
+		Description   string
+		Genres        []string
+		HasPoster     bool
+		PlayURLPrefix string
 	}{
-		Media:       media,
+		Media:         media,
 		Description: "",
-		Genres:      []string{},
-		HasPoster:   false,
+		Genres:        []string{},
+		HasPoster:     false,
+		PlayURLPrefix: "",
 	}
 
 	output := executeTemplate(t, tmpl, data)
@@ -320,15 +326,17 @@ func TestDetailTemplateWithEmptyGenres(t *testing.T) {
 	}
 
 	data := struct {
-		Media       *Media
-		Description string
-		Genres      []string
-		HasPoster   bool
+		Media         *Media
+		Description   string
+		Genres        []string
+		HasPoster     bool
+		PlayURLPrefix string
 	}{
-		Media:       media,
+		Media:         media,
 		Description: "Test",
-		Genres:      []string{},
-		HasPoster:   false,
+		Genres:        []string{},
+		HasPoster:     false,
+		PlayURLPrefix: "",
 	}
 
 	output := executeTemplate(t, tmpl, data)
@@ -353,15 +361,17 @@ func TestDetailTemplateWithNoTMDBID(t *testing.T) {
 	}
 
 	data := struct {
-		Media       *Media
-		Description string
-		Genres      []string
-		HasPoster   bool
+		Media         *Media
+		Description   string
+		Genres        []string
+		HasPoster     bool
+		PlayURLPrefix string
 	}{
-		Media:       media,
+		Media:         media,
 		Description: "Test",
-		Genres:      []string{},
-		HasPoster:   false,
+		Genres:        []string{},
+		HasPoster:     false,
+		PlayURLPrefix: "",
 	}
 
 	output := executeTemplate(t, tmpl, data)
@@ -391,15 +401,17 @@ func TestDetailTemplateWithTVShow(t *testing.T) {
 	}
 
 	data := struct {
-		Media       *Media
-		Description string
-		Genres      []string
-		HasPoster   bool
+		Media         *Media
+		Description   string
+		Genres        []string
+		HasPoster     bool
+		PlayURLPrefix string
 	}{
-		Media:       media,
+		Media:         media,
 		Description: "A chemistry teacher turned meth cook.",
-		Genres:      []string{"Drama", "Crime"},
-		HasPoster:   true,
+		Genres:        []string{"Drama", "Crime"},
+		HasPoster:     true,
+		PlayURLPrefix: "",
 	}
 
 	output := executeTemplate(t, tmpl, data)
@@ -412,6 +424,156 @@ func TestDetailTemplateWithTVShow(t *testing.T) {
 	// Verify TMDB link points to TV endpoint
 	if !strings.Contains(output, "themoviedb.org/tv/1396") {
 		t.Error("Expected TMDB link to point to TV endpoint")
+	}
+}
+
+// TestDetailTemplateWithDisks tests detail.html with disk listing
+func TestDetailTemplateWithDisks(t *testing.T) {
+	tmpl := parseTemplate(t, "detail.html")
+
+	media := &Media{
+		Title:     "The Thing",
+		Type:      Film,
+		Year:      1982,
+		DiskCount: 2,
+		Disks: []Disk{
+			{Name: "Disk 1", Format: "Blu-Ray", SizeGB: 45.2, Path: "/media/the-thing/Disk [Blu-Ray]"},
+			{Name: "Disk 2", Format: "DVD", SizeGB: 4.7, Path: "/media/the-thing/Disk 2 [DVD]"},
+		},
+		TMDBID: "1091",
+		Path:   "/test/the-thing",
+	}
+
+	data := struct {
+		Media         *Media
+		Description   string
+		Genres        []string
+		HasPoster     bool
+		PlayURLPrefix string
+	}{
+		Media:         media,
+		Description:   "Scientists in Antarctica discover an alien.",
+		Genres:        []string{"Horror", "Science Fiction"},
+		HasPoster:     true,
+		PlayURLPrefix: "",
+	}
+
+	output := executeTemplate(t, tmpl, data)
+
+	// Verify disk listing is shown
+	expectedStrings := []string{
+		"Disks",
+		"Disk 1",
+		"Disk 2",
+		"Blu-Ray",
+		"DVD",
+		"45.2 GB",
+		"4.7 GB",
+		"Name",
+		"Format",
+		"Size",
+		"Action",
+		"Copy Play Command",
+	}
+
+	for _, expected := range expectedStrings {
+		if !strings.Contains(output, expected) {
+			t.Errorf("Expected output to contain %q", expected)
+		}
+	}
+
+	// Verify empty state is NOT shown
+	if strings.Contains(output, "No disks found") {
+		t.Error("Expected 'No disks found' not to be shown when disks are present")
+	}
+}
+
+// TestDetailTemplateWithNoDisks tests detail.html with no disks
+func TestDetailTemplateWithNoDisks(t *testing.T) {
+	tmpl := parseTemplate(t, "detail.html")
+
+	media := &Media{
+		Title:     "Test Film",
+		Type:      Film,
+		Year:      2020,
+		DiskCount: 0,
+		Disks:     []Disk{},
+		Path:      "/test/test-film",
+	}
+
+	data := struct {
+		Media         *Media
+		Description   string
+		Genres        []string
+		HasPoster     bool
+		PlayURLPrefix string
+	}{
+		Media:         media,
+		Description: "Test",
+		Genres:        []string{},
+		HasPoster:     false,
+		PlayURLPrefix: "",
+	}
+
+	output := executeTemplate(t, tmpl, data)
+
+	// Verify empty state is shown
+	if !strings.Contains(output, "No disks found") {
+		t.Error("Expected 'No disks found' to be shown when no disks are present")
+	}
+
+	// Verify table is NOT shown
+	if strings.Contains(output, "<table") {
+		t.Error("Expected disk table not to be shown when no disks are present")
+	}
+}
+
+// TestDetailTemplateWithTVDisks tests detail.html with TV show disks
+func TestDetailTemplateWithTVDisks(t *testing.T) {
+	tmpl := parseTemplate(t, "detail.html")
+
+	media := &Media{
+		Title:     "Better Call Saul",
+		Type:      TV,
+		Year:      0,
+		DiskCount: 2,
+		Disks: []Disk{
+			{Name: "Series 1 Disk 1", Format: "Blu-Ray", SizeGB: 23.5, Path: "/media/better-call-saul/Series 1 Disk 1 [Blu-Ray]"},
+			{Name: "Series 1 Disk 2", Format: "Blu-Ray UHD", SizeGB: 66.8, Path: "/media/better-call-saul/Series 1 Disk 2 [Blu-Ray UHD]"},
+		},
+		TMDBID: "60059",
+		Path:   "/test/better-call-saul",
+	}
+
+	data := struct {
+		Media         *Media
+		Description   string
+		Genres        []string
+		HasPoster     bool
+		PlayURLPrefix string
+	}{
+		Media:         media,
+		Description: "The trials and tribulations of criminal lawyer Jimmy McGill.",
+		Genres:        []string{"Drama", "Crime"},
+		HasPoster:     true,
+		PlayURLPrefix: "",
+	}
+
+	output := executeTemplate(t, tmpl, data)
+
+	// Verify TV disk naming is correct
+	expectedStrings := []string{
+		"Series 1 Disk 1",
+		"Series 1 Disk 2",
+		"Blu-Ray UHD",
+		"23.5 GB",
+		"66.8 GB",
+	}
+
+	for _, expected := range expectedStrings {
+		if !strings.Contains(output, expected) {
+			t.Errorf("Expected output to contain %q", expected)
+		}
 	}
 }
 
@@ -971,18 +1133,20 @@ func TestAllTemplatesWithTypeComparison(t *testing.T) {
 
 			case "detail.html":
 				filmData := struct {
-					Media       *Media
-					Description string
-					Genres      []string
-					HasPoster   bool
-				}{Media: filmMedia, Description: "Test", Genres: []string{}, HasPoster: false}
+					Media         *Media
+					Description   string
+					Genres        []string
+					HasPoster     bool
+					PlayURLPrefix string
+				}{Media: filmMedia, Description: "Test", Genres: []string{}, HasPoster: false, PlayURLPrefix: ""}
 
 				tvData := struct {
-					Media       *Media
-					Description string
-					Genres      []string
-					HasPoster   bool
-				}{Media: tvMedia, Description: "Test", Genres: []string{}, HasPoster: false}
+					Media         *Media
+					Description   string
+					Genres        []string
+					HasPoster     bool
+					PlayURLPrefix string
+				}{Media: tvMedia, Description: "Test", Genres: []string{}, HasPoster: false, PlayURLPrefix: ""}
 
 				filmOutput := executeTemplate(t, tmpl, filmData)
 				tvOutput := executeTemplate(t, tmpl, tvData)

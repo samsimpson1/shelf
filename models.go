@@ -28,12 +28,21 @@ func (m MediaType) String() string {
 	}
 }
 
+// Disk represents an individual disk in a media backup
+type Disk struct {
+	Name   string  // Disk name/identifier (e.g., "Disk 1", "Series 1 Disk 2")
+	Format string  // Disk format (e.g., "Blu-Ray", "DVD", "Blu-Ray UHD")
+	SizeGB float64 // Disk size in gigabytes
+	Path   string  // Absolute path to the disk directory
+}
+
 // Media represents a media item from the backup directory
 type Media struct {
 	Title     string    // Title of the media
 	Type      MediaType // Film or TV
 	Year      int       // Year (for films, 0 for TV shows)
 	DiskCount int       // Number of disks
+	Disks     []Disk    // Individual disk information
 	TMDBID    string    // TMDB ID (optional, empty string if not present)
 	Path      string    // Absolute path to the media directory
 }
@@ -103,4 +112,27 @@ func (m *Media) LoadGenres() []string {
 		genres[i] = strings.TrimSpace(genres[i])
 	}
 	return genres
+}
+
+// PlayCommand generates a VLC play command for the disk
+func (d *Disk) PlayCommand(prefix string) string {
+	// Determine protocol based on disk format
+	var protocol string
+	formatLower := strings.ToLower(d.Format)
+
+	if strings.Contains(formatLower, "blu-ray") || strings.Contains(formatLower, "bluray") {
+		protocol = "bluray://"
+	} else if strings.Contains(formatLower, "dvd") {
+		protocol = "dvd://"
+	} else {
+		protocol = "file://"
+	}
+
+	// Construct the full path
+	fullPath := d.Path
+	if prefix != "" {
+		fullPath = prefix + d.Path
+	}
+
+	return fmt.Sprintf("vlc %s%s", protocol, fullPath)
 }

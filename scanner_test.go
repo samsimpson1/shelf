@@ -83,6 +83,9 @@ func TestScanTestdata(t *testing.T) {
 		if media.DiskCount != 1 {
 			t.Errorf("War of the Worlds: DiskCount = %v, want 1", media.DiskCount)
 		}
+		if len(media.Disks) != 1 {
+			t.Errorf("War of the Worlds: len(Disks) = %v, want 1", len(media.Disks))
+		}
 		if media.TMDBID != "755898" {
 			t.Errorf("War of the Worlds: TMDBID = %v, want 755898", media.TMDBID)
 		}
@@ -100,6 +103,9 @@ func TestScanTestdata(t *testing.T) {
 		}
 		if media.DiskCount != 2 {
 			t.Errorf("Better Call Saul: DiskCount = %v, want 2", media.DiskCount)
+		}
+		if len(media.Disks) != 2 {
+			t.Errorf("Better Call Saul: len(Disks) = %v, want 2", len(media.Disks))
 		}
 		if media.TMDBID != "60059" {
 			t.Errorf("Better Call Saul: TMDBID = %v, want 60059", media.TMDBID)
@@ -324,6 +330,115 @@ func TestReadTMDBIDWithWhitespace(t *testing.T) {
 	id := scanner.readTMDBID(tmpDir)
 	if id != "12345" {
 		t.Errorf("readTMDBID() = %v, want 12345 (whitespace should be trimmed)", id)
+	}
+}
+
+func TestExtractFormat(t *testing.T) {
+	tests := []struct {
+		name     string
+		dirName  string
+		expected string
+	}{
+		{
+			name:     "Blu-Ray format",
+			dirName:  "Disk [Blu-Ray]",
+			expected: "Blu-Ray",
+		},
+		{
+			name:     "Blu-Ray UHD format",
+			dirName:  "Series 1 Disk 1 [Blu-Ray UHD]",
+			expected: "Blu-Ray UHD",
+		},
+		{
+			name:     "DVD format",
+			dirName:  "Disk [DVD]",
+			expected: "DVD",
+		},
+		{
+			name:     "No brackets",
+			dirName:  "Disk",
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := extractFormat(tt.dirName)
+			if result != tt.expected {
+				t.Errorf("extractFormat(%q) = %q, want %q", tt.dirName, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestCollectFilmDisks(t *testing.T) {
+	testDir := setupTestData(t)
+	scanner := NewScanner(testDir)
+
+	// War of the Worlds should have 1 disk with details
+	path := filepath.Join(testDir, "War of the Worlds (2025) [Film]")
+	disks := scanner.collectFilmDisks(path)
+
+	if len(disks) != 1 {
+		t.Fatalf("collectFilmDisks() returned %d disks, want 1", len(disks))
+	}
+
+	disk := disks[0]
+	if disk.Name != "Disk 1" {
+		t.Errorf("Disk Name = %q, want %q", disk.Name, "Disk 1")
+	}
+	if disk.Format != "Blu-Ray" {
+		t.Errorf("Disk Format = %q, want %q", disk.Format, "Blu-Ray")
+	}
+	if disk.SizeGB < 0 {
+		t.Errorf("Disk SizeGB = %v, should be >= 0", disk.SizeGB)
+	}
+
+	// Nonexistent path should return empty slice
+	disks = scanner.collectFilmDisks("/nonexistent/path")
+	if len(disks) != 0 {
+		t.Errorf("collectFilmDisks() for nonexistent path returned %d disks, want 0", len(disks))
+	}
+}
+
+func TestCollectTVDisks(t *testing.T) {
+	testDir := setupTestData(t)
+	scanner := NewScanner(testDir)
+
+	// Better Call Saul should have 2 disks with details
+	path := filepath.Join(testDir, "Better Call Saul [TV]")
+	disks := scanner.collectTVDisks(path)
+
+	if len(disks) != 2 {
+		t.Fatalf("collectTVDisks() returned %d disks, want 2", len(disks))
+	}
+
+	// First disk
+	if disks[0].Name != "Series 1 Disk 1" {
+		t.Errorf("Disk[0] Name = %q, want %q", disks[0].Name, "Series 1 Disk 1")
+	}
+	if disks[0].Format != "Blu-Ray" {
+		t.Errorf("Disk[0] Format = %q, want %q", disks[0].Format, "Blu-Ray")
+	}
+	if disks[0].SizeGB < 0 {
+		t.Errorf("Disk[0] SizeGB = %v, should be >= 0", disks[0].SizeGB)
+	}
+
+	// Second disk
+	if disks[1].Name != "Series 1 Disk 2" {
+		t.Errorf("Disk[1] Name = %q, want %q", disks[1].Name, "Series 1 Disk 2")
+	}
+	if disks[1].Format != "Blu-Ray UHD" {
+		t.Errorf("Disk[1] Format = %q, want %q", disks[1].Format, "Blu-Ray UHD")
+	}
+	if disks[1].SizeGB < 0 {
+		t.Errorf("Disk[1] SizeGB = %v, should be >= 0", disks[1].SizeGB)
+	}
+
+	// Nonexistent path should return empty slice
+	disks = scanner.collectTVDisks("/nonexistent/path")
+	if len(disks) != 0 {
+		t.Errorf("collectTVDisks() for nonexistent path returned %d disks, want 0", len(disks))
 	}
 }
 

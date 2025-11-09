@@ -164,3 +164,213 @@ func TestNewApp(t *testing.T) {
 		t.Error("NewApp() templates is nil")
 	}
 }
+
+func TestDetailHandler(t *testing.T) {
+	// Create a realistic detail template
+	tmpl := template.Must(template.New("detail.html").Parse(`
+<!DOCTYPE html>
+<html>
+<body>
+<h1>{{.Media.DisplayTitle}}</h1>
+<p>Type: {{.Media.Type}}</p>
+<p>Disks: {{.Media.DiskCount}}</p>
+{{if .Media.Disks}}
+<table>
+<tr><th>Name</th><th>Format</th><th>Size</th></tr>
+{{range .Media.Disks}}
+<tr><td>{{.Name}}</td><td>{{.Format}}</td><td>{{printf "%.1f GB" .SizeGB}}</td></tr>
+{{end}}
+</table>
+{{end}}
+<p>Description: {{.Description}}</p>
+{{range .Genres}}<span>{{.}}</span>{{end}}
+</body>
+</html>
+`))
+
+	tests := []struct {
+		name           string
+		mediaList      []Media
+		requestPath    string
+		expectedStatus int
+		expectedInBody []string
+		notInBody      []string
+	}{
+		{
+			name: "Film with disks",
+			mediaList: []Media{
+				{
+					Title:     "The Thing",
+					Type:      Film,
+					Year:      1982,
+					DiskCount: 2,
+					Disks: []Disk{
+						{Name: "Disk 1", Format: "Blu-Ray", SizeGB: 45.2},
+						{Name: "Disk 2", Format: "DVD", SizeGB: 4.7},
+					},
+					TMDBID: "1091",
+					Path:   "/test/the-thing",
+				},
+			},
+			requestPath:    "/media/the-thing-1982",
+			expectedStatus: http.StatusOK,
+			expectedInBody: []string{
+				"The Thing (1982)",
+				"Film",
+				"Disk 1",
+				"Disk 2",
+				"Blu-Ray",
+				"DVD",
+				"45.2 GB",
+				"4.7 GB",
+			},
+		},
+		{
+			name: "TV show with disks",
+			mediaList: []Media{
+				{
+					Title:     "Better Call Saul",
+					Type:      TV,
+					Year:      0,
+					DiskCount: 2,
+					Disks: []Disk{
+						{Name: "Series 1 Disk 1", Format: "Blu-Ray", SizeGB: 23.5},
+						{Name: "Series 1 Disk 2", Format: "Blu-Ray UHD", SizeGB: 66.8},
+					},
+					TMDBID: "60059",
+					Path:   "/test/better-call-saul",
+				},
+			},
+			requestPath:    "/media/better-call-saul",
+			expectedStatus: http.StatusOK,
+			expectedInBody: []string{
+				"Better Call Saul",
+				"TV",
+				"Series 1 Disk 1",
+				"Series 1 Disk 2",
+				"Blu-Ray UHD",
+				"23.5 GB",
+				"66.8 GB",
+			},
+		},
+		{
+			name: "Film with no disks",
+			mediaList: []Media{
+				{
+					Title:     "Empty Film",
+					Type:      Film,
+					Year:      2020,
+					DiskCount: 0,
+					Disks:     []Disk{},
+					Path:      "/test/empty-film",
+				},
+			},
+			requestPath:    "/media/empty-film-2020",
+			expectedStatus: http.StatusOK,
+			expectedInBody: []string{
+				"Empty Film (2020)",
+				"Film",
+			},
+			notInBody: []string{
+				"<table>",
+			},
+		},
+		{
+			name:           "Invalid slug - not found",
+			mediaList:      []Media{},
+			requestPath:    "/media/nonexistent",
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name:           "Empty slug",
+			mediaList:      []Media{},
+			requestPath:    "/media/",
+			expectedStatus: http.StatusNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app := NewApp(tt.mediaList, tmpl, "/test/media")
+
+			req := httptest.NewRequest(http.MethodGet, tt.requestPath, nil)
+			w := httptest.NewRecorder()
+
+			app.DetailHandler(w, req)
+
+			res := w.Result()
+			defer res.Body.Close()
+
+			if res.StatusCode != tt.expectedStatus {
+				t.Errorf("DetailHandler() status = %v, want %v", res.StatusCode, tt.expectedStatus)
+			}
+
+			if tt.expectedStatus == http.StatusOK {
+				body := w.Body.String()
+				for _, expected := range tt.expectedInBody {
+					if !strings.Contains(body, expected) {
+						t.Errorf("DetailHandler() body does not contain %q", expected)
+					}
+				}
+				for _, notExpected := range tt.notInBody {
+					if strings.Contains(body, notExpected) {
+						t.Errorf("DetailHandler() body should not contain %q", notExpected)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestFindMediaBySlug(t *testing.T) {
+	mediaList := []Media{
+		{Title: "The Thing", Type: Film, Year: 1982, Path: "/test/thing"},
+		{Title: "Better Call Saul", Type: TV, Year: 0, Path: "/test/bcs"},
+	}
+
+	tmpl := template.Must(template.New("test").Parse("test"))
+	app := NewApp(mediaList, tmpl, "/test/media")
+
+	tests := []struct {
+		name      string
+		slug      string
+		wantTitle string
+		wantNil   bool
+	}{
+		{
+			name:      "Find film by slug",
+			slug:      "the-thing-1982",
+			wantTitle: "The Thing",
+			wantNil:   false,
+		},
+		{
+			name:      "Find TV show by slug",
+			slug:      "better-call-saul",
+			wantTitle: "Better Call Saul",
+			wantNil:   false,
+		},
+		{
+			name:    "Nonexistent slug",
+			slug:    "nonexistent",
+			wantNil: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			media := app.findMediaBySlug(tt.slug)
+
+			if tt.wantNil {
+				if media != nil {
+					t.Errorf("findMediaBySlug(%q) = %v, want nil", tt.slug, media)
+				}
+			} else {
+				if media == nil {
+					t.Errorf("findMediaBySlug(%q) = nil, want media", tt.slug)
+				} else if media.Title != tt.wantTitle {
+					t.Errorf("findMediaBySlug(%q).Title = %q, want %q", tt.slug, media.Title, tt.wantTitle)
+				}
+			}
+		})
+	}
+}

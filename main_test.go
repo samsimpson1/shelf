@@ -30,6 +30,8 @@ func TestPrintHelp(t *testing.T) {
 		{"Optional indicator", "optional"},
 		{"DEV_MODE env var", "DEV_MODE"},
 		{"DEV_MODE description", "Development mode"},
+		{"PLAY_URL_PREFIX env var", "PLAY_URL_PREFIX"},
+		{"PLAY_URL_PREFIX description", "URL prefix for VLC play commands"},
 	}
 
 	for _, tt := range tests {

@@ -102,8 +102,9 @@ func (s *Scanner) parseFilm(dirName, dirPath string) (Media, bool) {
 		Path:  dirPath,
 	}
 
-	// Count disks
-	media.DiskCount = s.countFilmDisks(dirPath)
+	// Collect disk details
+	media.Disks = s.collectFilmDisks(dirPath)
+	media.DiskCount = len(media.Disks)
 
 	// Read TMDB ID if present
 	media.TMDBID = s.readTMDBID(dirPath)
@@ -134,8 +135,9 @@ func (s *Scanner) parseTV(dirName, dirPath string) (Media, bool) {
 		Path:  dirPath,
 	}
 
-	// Count TV disks
-	media.DiskCount = s.countTVDisks(dirPath)
+	// Collect disk details
+	media.Disks = s.collectTVDisks(dirPath)
+	media.DiskCount = len(media.Disks)
 
 	// Read TMDB ID if present
 	media.TMDBID = s.readTMDBID(dirPath)
@@ -148,6 +150,32 @@ func (s *Scanner) parseTV(dirName, dirPath string) (Media, bool) {
 	}
 
 	return media, true
+}
+
+// calculateDirSize calculates the total size of a directory in bytes
+func calculateDirSize(dirPath string) (int64, error) {
+	var size int64
+	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return nil
+	})
+	return size, err
+}
+
+// extractFormat extracts the disk format from directory name (content within brackets)
+func extractFormat(dirName string) string {
+	// Find content within square brackets
+	start := strings.Index(dirName, "[")
+	end := strings.Index(dirName, "]")
+	if start >= 0 && end > start {
+		return dirName[start+1 : end]
+	}
+	return ""
 }
 
 // countFilmDisks counts the number of disk directories in a film directory
@@ -170,6 +198,41 @@ func (s *Scanner) countFilmDisks(dirPath string) int {
 	return count
 }
 
+// collectFilmDisks collects detailed information about film disks
+func (s *Scanner) collectFilmDisks(dirPath string) []Disk {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return []Disk{}
+	}
+
+	var disks []Disk
+	diskNum := 1
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		if diskPattern.MatchString(entry.Name()) {
+			format := extractFormat(entry.Name())
+			diskPath := filepath.Join(dirPath, entry.Name())
+			size, err := calculateDirSize(diskPath)
+			sizeGB := 0.0
+			if err == nil {
+				sizeGB = float64(size) / (1024 * 1024 * 1024) // Convert bytes to GB
+			}
+
+			disks = append(disks, Disk{
+				Name:   fmt.Sprintf("Disk %d", diskNum),
+				Format: format,
+				SizeGB: sizeGB,
+				Path:   diskPath,
+			})
+			diskNum++
+		}
+	}
+
+	return disks
+}
+
 // countTVDisks counts the number of disk directories in a TV show directory
 func (s *Scanner) countTVDisks(dirPath string) int {
 	entries, err := os.ReadDir(dirPath)
@@ -188,6 +251,42 @@ func (s *Scanner) countTVDisks(dirPath string) int {
 	}
 
 	return count
+}
+
+// collectTVDisks collects detailed information about TV show disks
+func (s *Scanner) collectTVDisks(dirPath string) []Disk {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return []Disk{}
+	}
+
+	var disks []Disk
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		matches := tvDiskPattern.FindStringSubmatch(entry.Name())
+		if matches != nil {
+			seriesNum := matches[1]
+			diskNum := matches[2]
+			format := extractFormat(entry.Name())
+			diskPath := filepath.Join(dirPath, entry.Name())
+			size, err := calculateDirSize(diskPath)
+			sizeGB := 0.0
+			if err == nil {
+				sizeGB = float64(size) / (1024 * 1024 * 1024) // Convert bytes to GB
+			}
+
+			disks = append(disks, Disk{
+				Name:   fmt.Sprintf("Series %s Disk %s", seriesNum, diskNum),
+				Format: format,
+				SizeGB: sizeGB,
+				Path:   diskPath,
+			})
+		}
+	}
+
+	return disks
 }
 
 // readTMDBID reads the TMDB ID from tmdb.txt file if it exists

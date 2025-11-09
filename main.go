@@ -41,6 +41,11 @@ Configuration:
       Set to "true" to enable
       Default: false
 
+  PLAY_URL_PREFIX
+      URL prefix for VLC play commands (optional)
+      Used to construct full paths for network shares or mount points
+      Default: empty (assumes local paths)
+
 Examples:
   # Start with defaults
   ./shelf
@@ -53,6 +58,9 @@ Examples:
 
   # Start in development mode
   DEV_MODE=true ./shelf
+
+  # Start with network path prefix for VLC play commands
+  PLAY_URL_PREFIX=/mnt/media ./shelf
 `)
 }
 
@@ -92,6 +100,11 @@ func main() {
 	devMode := os.Getenv("DEV_MODE") == "true"
 	if devMode {
 		log.Println("Development mode enabled - templates will be reloaded on every request")
+	}
+
+	playURLPrefix := os.Getenv("PLAY_URL_PREFIX")
+	if playURLPrefix == "" {
+		playURLPrefix = "" // Empty by default, assumes local paths
 	}
 
 	// Validate media directory exists
@@ -139,6 +152,7 @@ func main() {
 	// Create app
 	app := NewApp(mediaList, tmpl, mediaDir)
 	app.SetDevMode(devMode)
+	app.SetPlayURLPrefix(playURLPrefix)
 
 	// Set TMDB client if available
 	if tmdbClient != nil {
