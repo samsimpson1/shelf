@@ -4,7 +4,7 @@ title: Add 'Copy Play Command' button to disk list
 status: To Do
 assignee: []
 created_date: '2025-11-09 11:09'
-updated_date: '2025-11-09 11:11'
+updated_date: '2025-11-09 11:15'
 labels: []
 dependencies:
   - task-008
@@ -70,8 +70,9 @@ vlc bluray:///mnt/media/War of the Worlds (2025) [Film]/Disk [Blu-Ray UHD]
    - Add tests for `PlayCommand()` method
    - Test environment variable handling
    - Test different disk formats generate correct protocol (bluray:// vs dvd://)
-   - Update template tests to verify button presence
+   - Update template tests in [templates_test.go](templates_test.go) to verify button presence
    - Add test for help text including PLAY_URL_PREFIX
+   - **CRITICAL**: Ensure template test coverage does not decrease - current coverage includes comprehensive tests for all templates (index, detail, search, confirm) with various data states
 
 ## Protocol Selection
 - Blu-Ray formats → `bluray://` protocol
@@ -96,4 +97,6 @@ vlc bluray:///mnt/media/War of the Worlds (2025) [Film]/Disk [Blu-Ray UHD]
 - [ ] #12 All existing tests updated and passing
 
 - [ ] #13 New tests added for PlayCommand method and protocol selection
+
+- [ ] #14 Template test coverage maintained or improved (no decrease in templates_test.go coverage)
 <!-- AC:END -->
