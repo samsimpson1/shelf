@@ -11,8 +11,9 @@ import (
 )
 
 func TestIntegrationScanAndServe(t *testing.T) {
-	// Use the testdata directory for integration testing
-	scanner := NewScanner("testdata")
+	// Use programmatically created test directory for integration testing
+	testDir := setupTestData(t)
+	scanner := NewScanner(testDir)
 	mediaList, err := scanner.Scan()
 	if err != nil {
 		t.Fatalf("Failed to scan testdata: %v", err)
@@ -25,7 +26,7 @@ func TestIntegrationScanAndServe(t *testing.T) {
 	}
 
 	// Create app
-	app := NewApp(mediaList, tmpl, "testdata")
+	app := NewApp(mediaList, tmpl, testDir)
 
 	// Create test request
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -86,7 +87,7 @@ func TestIntegrationWithEmptyDirectory(t *testing.T) {
 	}
 
 	// Create app and serve
-	app := NewApp(mediaList, tmpl, "testdata")
+	app := NewApp(mediaList, tmpl, tmpDir)
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
 	app.IndexHandler(w, req)
@@ -228,7 +229,8 @@ func TestIntegrationEndToEnd(t *testing.T) {
 	// 5. Verify response
 
 	// Scan testdata
-	scanner := NewScanner("testdata")
+	testDir := setupTestData(t)
+	scanner := NewScanner(testDir)
 	mediaList, err := scanner.Scan()
 	if err != nil {
 		t.Fatalf("Scan failed: %v", err)
@@ -246,7 +248,7 @@ func TestIntegrationEndToEnd(t *testing.T) {
 	}
 
 	// Create app
-	app := NewApp(mediaList, tmpl, "testdata")
+	app := NewApp(mediaList, tmpl, testDir)
 
 	// Create HTTP server
 	mux := http.NewServeMux()
