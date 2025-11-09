@@ -1,10 +1,10 @@
 ---
 id: task-010
 title: Add import functionality for organizing raw disk backups into MEDIA_DIR
-status: To Do
+status: Done
 assignee: []
 created_date: '2025-11-09 12:09'
-updated_date: '2025-11-09 12:11'
+updated_date: '2025-11-09 16:51'
 labels: []
 dependencies: []
 priority: high
@@ -31,26 +31,26 @@ This will streamline the workflow of importing new disk backups into the media l
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 New IMPORT_DIR environment variable is configurable
-- [ ] #2 Web UI provides import interface accessible from main page
-- [ ] #3 User can select a directory from IMPORT_DIR to import
-- [ ] #4 User is prompted to choose media kind (TV or Film)
-- [ ] #5 Optional TMDB search integration allows finding and linking media
-- [ ] #6 If TMDB match is selected, title and year are fetched from TMDB automatically
-- [ ] #7 If TMDB search is skipped, user is prompted to enter title and year manually
-- [ ] #8 For TV shows: user can specify series number and disk number
-- [ ] #9 User can choose to add disk to existing media or create new media
-- [ ] #10 Disk type is auto-detected from directory structure if possible
-- [ ] #11 User can manually select disk type: Blu-Ray, Blu-Ray UHD, DVD, or custom text
-- [ ] #12 Directory is moved/renamed to correct location in MEDIA_DIR with proper naming convention
-- [ ] #13 TMDB ID is saved to tmdb.txt if TMDB match is selected
-- [ ] #14 Success/error feedback is shown to user after import
-- [ ] #15 Existing media library scanning is not affected
-- [ ] #16 Import process validates directory structure before moving files
+- [x] #1 New IMPORT_DIR environment variable is configurable
+- [x] #2 Web UI provides import interface accessible from main page
+- [x] #3 User can select a directory from IMPORT_DIR to import
+- [x] #4 User is prompted to choose media kind (TV or Film)
+- [x] #5 Optional TMDB search integration allows finding and linking media
+- [x] #6 If TMDB match is selected, title and year are fetched from TMDB automatically
+- [x] #7 If TMDB search is skipped, user is prompted to enter title and year manually
+- [x] #8 For TV shows: user can specify series number and disk number
+- [x] #9 User can choose to add disk to existing media or create new media
+- [x] #10 Disk type is auto-detected from directory structure if possible
+- [x] #11 User can manually select disk type: Blu-Ray, Blu-Ray UHD, DVD, or custom text
+- [x] #12 Directory is moved/renamed to correct location in MEDIA_DIR with proper naming convention
+- [x] #13 TMDB ID is saved to tmdb.txt if TMDB match is selected
+- [x] #14 Success/error feedback is shown to user after import
+- [x] #15 Existing media library scanning is not affected
+- [x] #16 Import process validates directory structure before moving files
 
-- [ ] #17 Tests cover import workflow including validation and file operations
+- [x] #17 Tests cover import workflow including validation and file operations
 
-- [ ] #18 Directory and file names are sanitized to handle filesystem limitations (e.g., `:` replaced with `_`, other invalid characters handled)
-- [ ] #19 Sanitization is consistent with any existing naming conventions in the codebase
-- [ ] #20 Sanitized names are still readable and maintain media identification
+- [x] #18 Directory and file names are sanitized to handle filesystem limitations (e.g., `:` replaced with `_`, other invalid characters handled)
+- [x] #19 Sanitization is consistent with any existing naming conventions in the codebase
+- [x] #20 Sanitized names are still readable and maintain media identification
 <!-- AC:END -->
