@@ -1,9 +1,10 @@
 ---
 id: task-008
 title: List media disks in the details page
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2025-11-09 11:07'
+updated_date: '2025-11-09 11:47'
 labels: []
 dependencies: []
 priority: medium
