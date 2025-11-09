@@ -1,10 +1,10 @@
 ---
 id: task-001
 title: TMDB ID Search and Selection Feature
-status: To Do
+status: Done
 assignee: []
 created_date: '2025-11-08 15:38'
-updated_date: '2025-11-08 15:41'
+updated_date: '2025-11-09 12:25'
 labels: []
 dependencies: []
 priority: medium
@@ -31,19 +31,19 @@ This functionality will be implemented as a **separate page** accessible from th
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Separate TMDB ID search/selection page is created with its own route (e.g., /media/{slug}/set-tmdb-id)
-- [ ] #2 Media detail page has a button to navigate to the TMDB ID search page
-- [ ] #3 Users can search TMDB by title (and year for films) from the dedicated search page
-- [ ] #4 Search results display poster thumbnails, titles, release dates, and overview
-- [ ] #5 Users can select from search results to set TMDB ID
-- [ ] #6 Users can manually enter a TMDB ID if they know it
-- [ ] #7 Confirmation page shows preview of selected TMDB match before saving
-- [ ] #8 tmdb.txt file is created/updated correctly in media directory
-- [ ] #9 Users can change existing TMDB IDs with warning about metadata replacement
-- [ ] #10 Optional metadata fetch can be triggered after ID is set
-- [ ] #11 Feature gracefully degrades when TMDB_API_KEY is not configured
-- [ ] #12 All security considerations are addressed (path traversal, input validation, TMDB ID validation)
+- [x] #1 Separate TMDB ID search/selection page is created with its own route (e.g., /media/{slug}/set-tmdb-id)
+- [x] #2 Media detail page has a button to navigate to the TMDB ID search page
+- [x] #3 Users can search TMDB by title (and year for films) from the dedicated search page
+- [x] #4 Search results display poster thumbnails, titles, release dates, and overview
+- [x] #5 Users can select from search results to set TMDB ID
+- [x] #6 Users can manually enter a TMDB ID if they know it
+- [x] #7 Confirmation page shows preview of selected TMDB match before saving
+- [x] #8 tmdb.txt file is created/updated correctly in media directory
+- [x] #9 Users can change existing TMDB IDs with warning about metadata replacement
+- [x] #10 Optional metadata fetch can be triggered after ID is set
+- [x] #11 Feature gracefully degrades when TMDB_API_KEY is not configured
+- [x] #12 All security considerations are addressed (path traversal, input validation, TMDB ID validation)
 
-- [ ] #13 Test coverage remains above 80%
-- [ ] #14 Documentation is updated with TMDB ID management instructions
+- [x] #13 Test coverage remains above 80%
+- [x] #14 Documentation is updated with TMDB ID management instructions
 <!-- AC:END -->
