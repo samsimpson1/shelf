@@ -7,13 +7,14 @@ import (
 )
 
 // setupTestData creates a temporary directory with the standard test media structure.
-// This ensures tests have a consistent, isolated environment regardless of the state
-// of the checked-in testdata directory.
+// This ensures tests have a consistent, isolated environment with automatic cleanup.
 //
 // The structure created is:
 //   - War of the Worlds (2025) [Film] - 1 disk, TMDB ID 755898
 //   - Better Call Saul [TV] - 2 disks (Series 1), TMDB ID 60059
 //   - No TMDB (2021) [Film] - 1 disk, no TMDB ID
+//
+// The directory is automatically cleaned up when the test completes via t.TempDir().
 func setupTestData(t *testing.T) string {
 	t.Helper()
 
@@ -62,31 +63,4 @@ func setupTestData(t *testing.T) string {
 	}
 
 	return tmpDir
-}
-
-// ensureTestDataExists ensures the testdata directory has the expected structure.
-// This is useful for tests that need to use the checked-in testdata directory.
-// It creates any missing directories but does not remove anything.
-func ensureTestDataExists(t *testing.T) {
-	t.Helper()
-
-	testdataDir := "testdata"
-
-	// Ensure War of the Worlds disk directory exists
-	filmDiskDir := filepath.Join(testdataDir, "War of the Worlds (2025) [Film]", "Disk [Blu-Ray]")
-	if err := os.MkdirAll(filmDiskDir, 0755); err != nil {
-		t.Fatalf("Failed to create film disk directory: %v", err)
-	}
-
-	// Ensure Better Call Saul disk directories exist
-	tvDisk1 := filepath.Join(testdataDir, "Better Call Saul [TV]", "Series 1 Disk 1 [Blu-Ray]")
-	if err := os.MkdirAll(tvDisk1, 0755); err != nil {
-		t.Fatalf("Failed to create TV disk 1 directory: %v", err)
-	}
-	tvDisk2 := filepath.Join(testdataDir, "Better Call Saul [TV]", "Series 1 Disk 2 [Blu-Ray]")
-	if err := os.MkdirAll(tvDisk2, 0755); err != nil {
-		t.Fatalf("Failed to create TV disk 2 directory: %v", err)
-	}
-
-	// No TMDB directory should already be complete (has .nodelete file)
 }

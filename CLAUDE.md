@@ -132,10 +132,15 @@ The project achieves 54.7% code coverage with comprehensive tests:
 
 ### Test Fixtures
 
-- **[testdata/](testdata/)** - Sample directory structure for testing
-  - War of the Worlds (2025) [Film]
-  - Better Call Saul [TV]
-  - No TMDB (2021) [Film]
+- **[test_helpers.go](test_helpers.go)** - Test utility functions for creating isolated test fixtures
+  - `setupTestData(t)` - Creates temporary test directory with standard media structure
+
+Test fixtures are created programmatically in each test using `t.TempDir()` for:
+  - War of the Worlds (2025) [Film] - 1 disk, TMDB ID 755898
+  - Better Call Saul [TV] - 2 disks (Series 1), TMDB ID 60059
+  - No TMDB (2021) [Film] - 1 disk, no TMDB ID
+
+This ensures test isolation and consistent behavior across all environments.
 
 ### Running Tests
 
