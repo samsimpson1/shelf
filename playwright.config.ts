@@ -10,7 +10,6 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: [
-    ['html'],
     ['list']
   ],
   use: {
@@ -34,7 +33,7 @@ export default defineConfig({
 
   /* Run the Go server before starting tests */
   webServer: {
-    command: 'MEDIA_DIR=./e2e/fixtures/media IMPORT_DIR=./e2e/fixtures/import PORT=8080 ./shelf',
+    command: 'MEDIA_DIR=./e2e/fixtures/media IMPORT_DIR=./e2e/fixtures/import PORT=8080 TMDB_API_KEY=test_key_for_e2e ./shelf',
     url: 'http://localhost:8080',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,

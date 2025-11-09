@@ -15,10 +15,10 @@ test.describe('Media Details Page', () => {
 
     // Verify metadata section is present
     await expect(page.locator('text=Type')).toBeVisible();
-    await expect(page.locator('text=Disks')).toBeVisible();
+    await expect(page.locator('.meta-item:has-text("Disks")')).toBeVisible();
 
-    // Verify back to library link exists
-    await expect(page.locator('a:has-text("Back to Library")')).toBeVisible();
+    // Verify back link exists
+    await expect(page.locator('a.back:has-text("Back")')).toBeVisible();
   });
 
   test('should display poster image or fallback', async ({ page }) => {

@@ -41,7 +41,7 @@ test.describe('Import Workflow', () => {
       }
 
       // Verify Blu-Ray is detected (if auto-detection is shown)
-      const detectedText = page.locator('text=/Blu-?Ray/i, text=BDMV');
+      const detectedText = page.locator('text=/Blu-?Ray/i');
       if (await detectedText.count() > 0) {
         await expect(detectedText.first()).toBeVisible();
       }
