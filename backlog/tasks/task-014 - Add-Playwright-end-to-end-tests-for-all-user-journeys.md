@@ -4,7 +4,7 @@ title: Add Playwright end-to-end tests for all user journeys
 status: To Do
 assignee: []
 created_date: '2025-11-09 15:03'
-updated_date: '2025-11-09 15:04'
+updated_date: '2025-11-09 15:07'
 labels: []
 dependencies: []
 priority: high
@@ -44,3 +44,13 @@ This will improve confidence in deployments and catch regressions in the user in
 - [ ] #15 Documentation (CLAUDE.md) is updated to require E2E tests for all new features
 - [ ] #16 Contributing guidelines or testing section explains when and how to write E2E tests
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+User requested to replace existing template tests (templates_test.go) with Playwright E2E tests instead of keeping both
+
+This means removing templates_test.go and replacing that testing approach with comprehensive E2E tests
+
+The E2E tests will provide better coverage by testing the actual user experience rather than just template rendering
+<!-- SECTION:NOTES:END -->
