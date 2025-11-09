@@ -17,6 +17,12 @@ export default defineConfig({
     baseURL: 'http://localhost:8080',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    launchOptions: {
+      args: [
+        '--disable-dev-shm-usage', // Avoid /dev/shm issues in Docker
+        '--no-sandbox',            // Required for Docker environments
+      ],
+    },
   },
 
   projects: [
