@@ -53,7 +53,8 @@ func TestScanFileNotDirectory(t *testing.T) {
 }
 
 func TestScanTestdata(t *testing.T) {
-	scanner := NewScanner("testdata")
+	testDir := setupTestData(t)
+	scanner := NewScanner(testDir)
 	mediaList, err := scanner.Scan()
 	if err != nil {
 		t.Fatalf("Scan() error = %v", err)
@@ -167,7 +168,7 @@ func TestParseFilmName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner := NewScanner("testdata")
+			scanner := NewScanner("/tmp")
 			media, ok := scanner.parseFilm(tt.dirName, "/fake/path")
 
 			if ok != tt.shouldMatch {
@@ -222,7 +223,7 @@ func TestParseTVName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner := NewScanner("testdata")
+			scanner := NewScanner("/tmp")
 			media, ok := scanner.parseTV(tt.dirName, "/fake/path")
 
 			if ok != tt.shouldMatch {
@@ -245,10 +246,11 @@ func TestParseTVName(t *testing.T) {
 }
 
 func TestCountFilmDisks(t *testing.T) {
-	scanner := NewScanner("testdata")
+	testDir := setupTestData(t)
+	scanner := NewScanner(testDir)
 
 	// War of the Worlds should have 1 disk
-	path := filepath.Join("testdata", "War of the Worlds (2025) [Film]")
+	path := filepath.Join(testDir, "War of the Worlds (2025) [Film]")
 	count := scanner.countFilmDisks(path)
 	if count != 1 {
 		t.Errorf("countFilmDisks() = %v, want 1", count)
@@ -262,10 +264,11 @@ func TestCountFilmDisks(t *testing.T) {
 }
 
 func TestCountTVDisks(t *testing.T) {
-	scanner := NewScanner("testdata")
+	testDir := setupTestData(t)
+	scanner := NewScanner(testDir)
 
 	// Better Call Saul should have 2 disks
-	path := filepath.Join("testdata", "Better Call Saul [TV]")
+	path := filepath.Join(testDir, "Better Call Saul [TV]")
 	count := scanner.countTVDisks(path)
 	if count != 2 {
 		t.Errorf("countTVDisks() = %v, want 2", count)
@@ -279,17 +282,18 @@ func TestCountTVDisks(t *testing.T) {
 }
 
 func TestReadTMDBID(t *testing.T) {
-	scanner := NewScanner("testdata")
+	testDir := setupTestData(t)
+	scanner := NewScanner(testDir)
 
 	// War of the Worlds should have TMDB ID
-	path := filepath.Join("testdata", "War of the Worlds (2025) [Film]")
+	path := filepath.Join(testDir, "War of the Worlds (2025) [Film]")
 	id := scanner.readTMDBID(path)
 	if id != "755898" {
 		t.Errorf("readTMDBID() = %v, want 755898", id)
 	}
 
 	// No TMDB film should not have TMDB ID
-	path = filepath.Join("testdata", "No TMDB (2021) [Film]")
+	path = filepath.Join(testDir, "No TMDB (2021) [Film]")
 	id = scanner.readTMDBID(path)
 	if id != "" {
 		t.Errorf("readTMDBID() = %v, want empty string", id)
@@ -316,7 +320,7 @@ func TestReadTMDBIDWithWhitespace(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	scanner := NewScanner("testdata")
+	scanner := NewScanner("/tmp")
 	id := scanner.readTMDBID(tmpDir)
 	if id != "12345" {
 		t.Errorf("readTMDBID() = %v, want 12345 (whitespace should be trimmed)", id)
