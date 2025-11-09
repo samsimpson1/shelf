@@ -136,3 +136,23 @@ func (d *Disk) PlayCommand(prefix string) string {
 
 	return fmt.Sprintf("vlc \"%s%s\"", protocol, fullPath)
 }
+
+// MPVPlayCommand generates an MPV play command for the disk
+func (d *Disk) MPVPlayCommand(prefix string) string {
+	// Construct the full path
+	fullPath := d.Path
+	if prefix != "" {
+		fullPath = prefix + d.Path
+	}
+
+	// Determine command based on disk format
+	formatLower := strings.ToLower(d.Format)
+
+	if strings.Contains(formatLower, "blu-ray") || strings.Contains(formatLower, "bluray") {
+		return fmt.Sprintf("mpv bd:// --bluray-device=\"%s\"", fullPath)
+	} else if strings.Contains(formatLower, "dvd") {
+		return fmt.Sprintf("mpv dvd:// --dvd-device=\"%s\"", fullPath)
+	} else {
+		return fmt.Sprintf("mpv \"%s\"", fullPath)
+	}
+}

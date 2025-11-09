@@ -483,7 +483,8 @@ func TestDetailTemplateWithDisks(t *testing.T) {
 		"Format",
 		"Size",
 		"Action",
-		"Copy Play Command",
+		"Copy VLC Command",
+		"Copy MPV Command",
 	}
 
 	for _, expected := range expectedStrings {
