@@ -49,4 +49,8 @@ This will streamline the workflow of importing new disk backups into the media l
 - [ ] #16 Import process validates directory structure before moving files
 
 - [ ] #17 Tests cover import workflow including validation and file operations
+
+- [ ] #18 Directory and file names are sanitized to handle filesystem limitations (e.g., `:` replaced with `_`, other invalid characters handled)
+- [ ] #19 Sanitization is consistent with any existing naming conventions in the codebase
+- [ ] #20 Sanitized names are still readable and maintain media identification
 <!-- AC:END -->
