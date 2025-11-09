@@ -43,3 +43,13 @@ test-results/
 
 # Disk size cache files
 sizes.json
+
+# E2E test fixture binary files (keep .gitkeep)
+e2e/fixtures/media/*/BDMV/*
+!e2e/fixtures/media/*/BDMV/.gitkeep
+e2e/fixtures/media/*/*/BDMV/*
+!e2e/fixtures/media/*/*/BDMV/.gitkeep
+e2e/fixtures/media/*/VIDEO_TS/*
+!e2e/fixtures/media/*/VIDEO_TS/.gitkeep
+e2e/fixtures/media/*/*/VIDEO_TS/*
+!e2e/fixtures/media/*/*/VIDEO_TS/.gitkeep
