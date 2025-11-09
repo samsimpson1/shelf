@@ -31,12 +31,9 @@ export default defineConfig({
     },
   ],
 
-  /* Setup fixtures before starting tests */
-  globalSetup: './e2e/global-setup.ts',
-
   /* Run the Go server before starting tests */
   webServer: {
-    command: 'MEDIA_DIR=./e2e/fixtures/media IMPORT_DIR=./e2e/fixtures/import PORT=8080 TMDB_API_KEY=test_key_for_e2e ./shelf',
+    command: 'npx tsx e2e/setup-fixtures.ts && MEDIA_DIR=./e2e/fixtures/media IMPORT_DIR=./e2e/fixtures/import PORT=8080 TMDB_API_KEY=test_key_for_e2e ./shelf',
     url: 'http://localhost:8080',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,

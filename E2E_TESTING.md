@@ -117,8 +117,8 @@ Test fixtures are **automatically generated** before tests run - they are NOT st
 
 **How it works:**
 - `e2e/setup-fixtures.ts` - Generates all test data (disk files, metadata, posters)
-- `e2e/global-setup.ts` - Playwright global setup that runs fixture generation
-- Fixtures are created in `e2e/fixtures/` at test time
+- Fixtures are generated as part of the `webServer` command in `playwright.config.ts`
+- Fixtures are created in `e2e/fixtures/` before the Go server starts
 - See [e2e/README.md](e2e/README.md) for details on how fixtures work
 
 **Generated fixtures:**
@@ -240,7 +240,7 @@ The CI workflow:
 3. Builds the application
 4. Installs Node.js dependencies (including `tsx`)
 5. Installs Playwright browsers
-6. Runs all tests (fixtures auto-generated via `globalSetup`)
+6. Runs all tests (fixtures auto-generated as part of `webServer` startup)
 7. Uploads test reports as artifacts
 
 ### Viewing CI Results

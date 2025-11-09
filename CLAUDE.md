@@ -270,7 +270,7 @@ npm run test:report
 Test fixtures are automatically generated before tests run - they are NOT stored in the repository:
 
 - **[e2e/setup-fixtures.ts](e2e/setup-fixtures.ts)** - Generates all test data (disk files, metadata, posters)
-- **[e2e/global-setup.ts](e2e/global-setup.ts)** - Playwright global setup that runs fixture generation
+- Fixtures are generated as part of the `webServer` command in [playwright.config.ts](playwright.config.ts)
 - Fixtures include 3 media items (The Matrix, Breaking Bad, No TMDB Film) and 3 import directories
 - See [e2e/README.md](e2e/README.md) for details on how fixtures work
 

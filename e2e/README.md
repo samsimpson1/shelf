@@ -13,9 +13,7 @@ Test fixtures are **NOT** stored in the repository. Instead, they are automatica
    - Metadata files (tmdb.txt, description.txt, genre.txt, title.txt)
    - Poster images (1x1 pixel JPEG placeholders)
 
-2. **[global-setup.ts](global-setup.ts)** - Playwright global setup that runs `setup-fixtures.ts` before all tests
-
-3. **[playwright.config.ts](../playwright.config.ts)** - Configured to run global setup automatically
+2. **[playwright.config.ts](../playwright.config.ts)** - The `webServer` command runs `setup-fixtures.ts` before starting the Go server, ensuring fixtures exist before tests run
 
 ### Generated Fixtures
 
@@ -59,7 +57,7 @@ npm run test:ui
 
 ### CI/CD
 
-In CI, fixtures are generated automatically via the `globalSetup` in playwright.config.ts. No manual setup required.
+In CI, fixtures are generated automatically as part of the `webServer` command in playwright.config.ts. No manual setup required.
 
 ### Why Not Store Fixtures in Git?
 
