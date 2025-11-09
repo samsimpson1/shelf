@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -177,6 +178,39 @@ func calculateDirSize(dirPath string) (int64, error) {
 	return size, err
 }
 
+// loadSizeCache loads the disk size cache from sizes.json in the media directory
+// Returns an empty map if the file doesn't exist or contains invalid JSON
+func loadSizeCache(mediaDir string) map[string]int64 {
+	cachePath := filepath.Join(mediaDir, "sizes.json")
+	data, err := os.ReadFile(cachePath)
+	if err != nil {
+		// Cache file doesn't exist or can't be read - return empty map
+		return make(map[string]int64)
+	}
+
+	var cache map[string]int64
+	if err := json.Unmarshal(data, &cache); err != nil {
+		// Invalid JSON - return empty map
+		return make(map[string]int64)
+	}
+
+	return cache
+}
+
+// saveSizeCache saves the disk size cache to sizes.json in the media directory
+func saveSizeCache(mediaDir string, cache map[string]int64) error {
+	cachePath := filepath.Join(mediaDir, "sizes.json")
+
+	// Marshal with indentation for human readability
+	data, err := json.MarshalIndent(cache, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	// Write the cache file
+	return os.WriteFile(cachePath, data, 0644)
+}
+
 // extractFormat extracts the disk format from directory name (content within brackets)
 func extractFormat(dirName string) string {
 	// Find content within square brackets
@@ -215,6 +249,10 @@ func (s *Scanner) collectFilmDisks(dirPath string) []Disk {
 		return []Disk{}
 	}
 
+	// Load size cache
+	cache := loadSizeCache(dirPath)
+	cacheUpdated := false
+
 	var disks []Disk
 	diskNum := 1
 	for _, entry := range entries {
@@ -224,11 +262,23 @@ func (s *Scanner) collectFilmDisks(dirPath string) []Disk {
 		if diskPattern.MatchString(entry.Name()) {
 			format := extractFormat(entry.Name())
 			diskPath := filepath.Join(dirPath, entry.Name())
-			size, err := calculateDirSize(diskPath)
-			sizeGB := 0.0
-			if err == nil {
-				sizeGB = float64(size) / (1024 * 1024 * 1024) // Convert bytes to GB
+
+			// Try to get size from cache first
+			var size int64
+			diskDirName := entry.Name()
+			if cachedSize, exists := cache[diskDirName]; exists {
+				size = cachedSize
+			} else {
+				// Calculate size and update cache
+				var err error
+				size, err = calculateDirSize(diskPath)
+				if err == nil {
+					cache[diskDirName] = size
+					cacheUpdated = true
+				}
 			}
+
+			sizeGB := float64(size) / (1024 * 1024 * 1024) // Convert bytes to GB
 
 			disks = append(disks, Disk{
 				Name:   fmt.Sprintf("Disk %d", diskNum),
@@ -237,6 +287,13 @@ func (s *Scanner) collectFilmDisks(dirPath string) []Disk {
 				Path:   diskPath,
 			})
 			diskNum++
+		}
+	}
+
+	// Save cache if it was updated
+	if cacheUpdated {
+		if err := saveSizeCache(dirPath, cache); err != nil {
+			log.Printf("Warning: Failed to save size cache for %s: %v", dirPath, err)
 		}
 	}
 
@@ -270,6 +327,10 @@ func (s *Scanner) collectTVDisks(dirPath string) []Disk {
 		return []Disk{}
 	}
 
+	// Load size cache
+	cache := loadSizeCache(dirPath)
+	cacheUpdated := false
+
 	var disks []Disk
 	for _, entry := range entries {
 		if !entry.IsDir() {
@@ -281,11 +342,23 @@ func (s *Scanner) collectTVDisks(dirPath string) []Disk {
 			diskNum := matches[2]
 			format := extractFormat(entry.Name())
 			diskPath := filepath.Join(dirPath, entry.Name())
-			size, err := calculateDirSize(diskPath)
-			sizeGB := 0.0
-			if err == nil {
-				sizeGB = float64(size) / (1024 * 1024 * 1024) // Convert bytes to GB
+
+			// Try to get size from cache first
+			var size int64
+			diskDirName := entry.Name()
+			if cachedSize, exists := cache[diskDirName]; exists {
+				size = cachedSize
+			} else {
+				// Calculate size and update cache
+				var err error
+				size, err = calculateDirSize(diskPath)
+				if err == nil {
+					cache[diskDirName] = size
+					cacheUpdated = true
+				}
 			}
+
+			sizeGB := float64(size) / (1024 * 1024 * 1024) // Convert bytes to GB
 
 			disks = append(disks, Disk{
 				Name:   fmt.Sprintf("Series %s Disk %s", seriesNum, diskNum),
@@ -293,6 +366,13 @@ func (s *Scanner) collectTVDisks(dirPath string) []Disk {
 				SizeGB: sizeGB,
 				Path:   diskPath,
 			})
+		}
+	}
+
+	// Save cache if it was updated
+	if cacheUpdated {
+		if err := saveSizeCache(dirPath, cache); err != nil {
+			log.Printf("Warning: Failed to save size cache for %s: %v", dirPath, err)
 		}
 	}
 

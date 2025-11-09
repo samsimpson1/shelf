@@ -569,3 +569,221 @@ func TestScanIgnoresNonMediaDirectories(t *testing.T) {
 		t.Errorf("Scan() found wrong media: %v", mediaList[0].Title)
 	}
 }
+
+// Test cache miss scenario - sizes calculated when cache missing
+func TestSizeCacheMiss(t *testing.T) {
+	testDir := setupTestData(t)
+	scanner := NewScanner(testDir)
+
+	// Scan for War of the Worlds (first scan, no cache)
+	filmPath := filepath.Join(testDir, "War of the Worlds (2025) [Film]")
+	disks := scanner.collectFilmDisks(filmPath)
+
+	if len(disks) != 1 {
+		t.Fatalf("collectFilmDisks() returned %d disks, want 1", len(disks))
+	}
+
+	// Check that cache file was created
+	cachePath := filepath.Join(filmPath, "sizes.json")
+	if _, err := os.Stat(cachePath); os.IsNotExist(err) {
+		t.Error("Cache file was not created after first scan")
+	}
+
+	// Verify cache content
+	cache := loadSizeCache(filmPath)
+	if len(cache) != 1 {
+		t.Errorf("Cache contains %d entries, want 1", len(cache))
+	}
+
+	if _, exists := cache["Disk [Blu-Ray]"]; !exists {
+		t.Error("Cache does not contain expected disk entry")
+	}
+}
+
+// Test cache hit scenario - sizes loaded from existing valid cache
+func TestSizeCacheHit(t *testing.T) {
+	testDir := setupTestData(t)
+	scanner := NewScanner(testDir)
+
+	// First scan to create cache
+	filmPath := filepath.Join(testDir, "War of the Worlds (2025) [Film]")
+	disks1 := scanner.collectFilmDisks(filmPath)
+
+	if len(disks1) != 1 {
+		t.Fatalf("First scan returned %d disks, want 1", len(disks1))
+	}
+
+	originalSize := disks1[0].SizeGB
+
+	// Second scan should use cache
+	disks2 := scanner.collectFilmDisks(filmPath)
+
+	if len(disks2) != 1 {
+		t.Fatalf("Second scan returned %d disks, want 1", len(disks2))
+	}
+
+	// Size should be the same (loaded from cache)
+	if disks2[0].SizeGB != originalSize {
+		t.Errorf("Cached size %v differs from original %v", disks2[0].SizeGB, originalSize)
+	}
+}
+
+// Test cache update scenario - cache file created/updated after calculation
+func TestSizeCacheUpdate(t *testing.T) {
+	testDir := setupTestData(t)
+
+	// Create a film directory with multiple disks
+	filmPath := filepath.Join(testDir, "Multi Disk Film (2020) [Film]")
+	os.Mkdir(filmPath, 0755)
+	disk1Path := filepath.Join(filmPath, "Disk [Blu-Ray]")
+	disk2Path := filepath.Join(filmPath, "Disk [DVD]")
+	os.Mkdir(disk1Path, 0755)
+	os.Mkdir(disk2Path, 0755)
+
+	// Add some test files to each disk
+	os.WriteFile(filepath.Join(disk1Path, "file1.txt"), []byte("test data 1"), 0644)
+	os.WriteFile(filepath.Join(disk2Path, "file2.txt"), []byte("test data 2"), 0644)
+
+	scanner := NewScanner(testDir)
+
+	// First scan - should create cache with both disks
+	disks := scanner.collectFilmDisks(filmPath)
+	if len(disks) != 2 {
+		t.Fatalf("collectFilmDisks() returned %d disks, want 2", len(disks))
+	}
+
+	// Verify cache was created and contains both disks
+	cache := loadSizeCache(filmPath)
+	if len(cache) != 2 {
+		t.Errorf("Cache contains %d entries, want 2", len(cache))
+	}
+
+	if _, exists := cache["Disk [Blu-Ray]"]; !exists {
+		t.Error("Cache missing Disk [Blu-Ray]")
+	}
+	if _, exists := cache["Disk [DVD]"]; !exists {
+		t.Error("Cache missing Disk [DVD]")
+	}
+}
+
+// Test invalid cache handling - graceful fallback to calculation
+func TestSizeCacheInvalid(t *testing.T) {
+	testDir := setupTestData(t)
+	scanner := NewScanner(testDir)
+
+	filmPath := filepath.Join(testDir, "War of the Worlds (2025) [Film]")
+
+	// Create an invalid cache file
+	cachePath := filepath.Join(filmPath, "sizes.json")
+	os.WriteFile(cachePath, []byte("invalid json{{{"), 0644)
+
+	// Scan should handle invalid cache gracefully
+	disks := scanner.collectFilmDisks(filmPath)
+
+	if len(disks) != 1 {
+		t.Fatalf("collectFilmDisks() with invalid cache returned %d disks, want 1", len(disks))
+	}
+
+	// Cache should be regenerated with valid data
+	cache := loadSizeCache(filmPath)
+	if len(cache) == 0 {
+		t.Error("Cache was not regenerated after encountering invalid cache")
+	}
+}
+
+// Test TV disk caching
+func TestTVDiskCaching(t *testing.T) {
+	testDir := setupTestData(t)
+	scanner := NewScanner(testDir)
+
+	// Scan Better Call Saul TV show
+	tvPath := filepath.Join(testDir, "Better Call Saul [TV]")
+	disks := scanner.collectTVDisks(tvPath)
+
+	if len(disks) != 2 {
+		t.Fatalf("collectTVDisks() returned %d disks, want 2", len(disks))
+	}
+
+	// Check that cache file was created
+	cachePath := filepath.Join(tvPath, "sizes.json")
+	if _, err := os.Stat(cachePath); os.IsNotExist(err) {
+		t.Error("Cache file was not created for TV show")
+	}
+
+	// Verify cache content
+	cache := loadSizeCache(tvPath)
+	if len(cache) != 2 {
+		t.Errorf("TV cache contains %d entries, want 2", len(cache))
+	}
+
+	if _, exists := cache["Series 1 Disk 1 [Blu-Ray]"]; !exists {
+		t.Error("Cache missing Series 1 Disk 1")
+	}
+	if _, exists := cache["Series 1 Disk 2 [Blu-Ray UHD]"]; !exists {
+		t.Error("Cache missing Series 1 Disk 2")
+	}
+
+	// Second scan should use cache
+	disks2 := scanner.collectTVDisks(tvPath)
+	if len(disks2) != 2 {
+		t.Fatalf("Second TV scan returned %d disks, want 2", len(disks2))
+	}
+
+	// Sizes should match (loaded from cache)
+	for i := range disks {
+		if disks2[i].SizeGB != disks[i].SizeGB {
+			t.Errorf("Disk %d cached size %v differs from original %v", i, disks2[i].SizeGB, disks[i].SizeGB)
+		}
+	}
+}
+
+// Test loadSizeCache with missing file
+func TestLoadSizeCacheMissingFile(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	cache := loadSizeCache(tmpDir)
+
+	if cache == nil {
+		t.Error("loadSizeCache() returned nil, want empty map")
+	}
+
+	if len(cache) != 0 {
+		t.Errorf("loadSizeCache() returned %d entries, want 0", len(cache))
+	}
+}
+
+// Test saveSizeCache
+func TestSaveSizeCache(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	testCache := map[string]int64{
+		"Disk [Blu-Ray]": 23456789012,
+		"Disk [DVD]":     4567890123,
+	}
+
+	err := saveSizeCache(tmpDir, testCache)
+	if err != nil {
+		t.Fatalf("saveSizeCache() error = %v", err)
+	}
+
+	// Verify file was created
+	cachePath := filepath.Join(tmpDir, "sizes.json")
+	if _, err := os.Stat(cachePath); os.IsNotExist(err) {
+		t.Fatal("Cache file was not created")
+	}
+
+	// Load and verify content
+	loadedCache := loadSizeCache(tmpDir)
+
+	if len(loadedCache) != 2 {
+		t.Errorf("Loaded cache contains %d entries, want 2", len(loadedCache))
+	}
+
+	if loadedCache["Disk [Blu-Ray]"] != 23456789012 {
+		t.Errorf("Loaded cache has wrong size for Blu-Ray disk")
+	}
+
+	if loadedCache["Disk [DVD]"] != 4567890123 {
+		t.Errorf("Loaded cache has wrong size for DVD disk")
+	}
+}
