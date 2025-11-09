@@ -253,6 +253,145 @@ The web UI features a modern poster-based design:
 - `/` - Poster grid view (index)
 - `/media/{slug}` - Individual media detail page (e.g., `/media/the-thing-1982`)
 - `/posters/{slug}` - Poster image serving (e.g., `/posters/the-thing-1982`)
+- `/media/{slug}/search-tmdb` - TMDB ID search page
+- `/media/{slug}/confirm-tmdb` - TMDB match confirmation page
+- `/media/{slug}/set-tmdb` - TMDB ID save endpoint (POST only)
+
+## TMDB ID Management
+
+The application provides a complete workflow for managing TMDB IDs through the web interface. This feature requires the `TMDB_API_KEY` environment variable to be set.
+
+### Setting a TMDB ID for the First Time
+
+When a media item doesn't have a TMDB ID:
+
+1. **Navigate to the media detail page** - Click on any media item from the library view
+2. **Click "Search for TMDB ID"** - A blue button appears when no TMDB ID is set
+3. **Search TMDB** - The search form is pre-filled with the media title:
+   - For films: You can optionally specify a year to narrow results
+   - For TV shows: Search by title only
+   - Click "Search TMDB" to find matches
+4. **Review search results** - Each result shows:
+   - Poster thumbnail
+   - Title and release/air date
+   - Overview/synopsis
+   - Popularity score
+5. **Select the correct match** - Click "Select This" on the matching result
+6. **Confirm the match** - Review the comparison page showing:
+   - Your current media metadata (left side)
+   - The TMDB match details (right side)
+   - Option to download metadata immediately (checked by default)
+7. **Save the TMDB ID** - Click "Confirm and Save TMDB ID"
+
+After saving, you'll be redirected back to the detail page with the new TMDB ID set.
+
+### Manual TMDB ID Entry
+
+If you already know the TMDB ID (e.g., from themoviedb.org):
+
+1. **Navigate to the search page** - Click "Search for TMDB ID" from the detail page
+2. **Click "Or enter TMDB ID manually"** - Expands a manual entry form
+3. **Enter the numeric TMDB ID** - Type or paste the ID (numbers only)
+4. **Click "Set TMDB ID"** - The ID is saved immediately without confirmation
+
+**Finding TMDB IDs manually:**
+- Visit [themoviedb.org](https://www.themoviedb.org/)
+- Search for your movie or TV show
+- The ID is in the URL: `https://www.themoviedb.org/movie/550` → ID is `550`
+
+### Changing an Existing TMDB ID
+
+If a media item already has a TMDB ID but it's incorrect:
+
+1. **Navigate to the media detail page** - View the media with the incorrect ID
+2. **Click "Change TMDB ID"** - A gray button appears when a TMDB ID exists
+3. **Warning displayed** - You'll see: "⚠️ Changing the TMDB ID will replace existing metadata"
+4. **Follow the same search/confirm workflow** - As described above
+5. **Review the replacement warning** - The confirmation page shows:
+   - Yellow warning box explaining metadata will be replaced
+   - Current TMDB ID displayed
+   - Side-by-side comparison of current vs. new metadata
+6. **Save the new ID** - Existing metadata files are replaced when you confirm
+
+### Metadata Download Options
+
+When confirming a TMDB ID, you have two options for metadata:
+
+**Immediate Download (Default - Recommended)**
+- Checkbox: "Download metadata now (poster, description, genres)" - **Checked**
+- Metadata is fetched and saved immediately after setting the ID
+- You'll see updated poster, description, and genres right away
+- No server restart required
+
+**Deferred Download**
+- Checkbox: "Download metadata now (poster, description, genres)" - **Unchecked**
+- Only the `tmdb.txt` file is created with the ID
+- Metadata will be downloaded on the next server restart
+- Useful if you want to batch-set IDs and download metadata later
+
+### Metadata Files
+
+When a TMDB ID is set and metadata is downloaded, four files are saved to the media directory:
+
+1. **`tmdb.txt`** - Contains the numeric TMDB ID
+2. **`poster.jpg` (or `.png`, `.webp`)** - Movie/TV poster in original quality
+3. **`description.txt`** - Overview/synopsis of the movie or TV show
+4. **`genre.txt`** - Comma-separated list of genres (e.g., "Action, Drama, Thriller")
+
+These files are stored directly in the media directory alongside the disk folders.
+
+### Refreshing Metadata After ID Change
+
+After changing a TMDB ID, metadata is automatically refreshed if you chose "Download metadata now":
+
+**What gets updated:**
+- Poster image (replaces old poster file)
+- Description text (replaces old description)
+- Genre list (replaces old genres)
+- TMDB ID reference (updates `tmdb.txt`)
+
+**What stays the same:**
+- Media directory name
+- Disk folders and content
+- File organization
+
+**Manual refresh (if needed):**
+- Delete the metadata files (`poster.*`, `description.txt`, `genre.txt`) from the media directory
+- Restart the server - metadata will be re-downloaded from TMDB
+- OR use the web interface to change the TMDB ID again with "Download metadata now" checked
+
+### Error Handling
+
+The TMDB ID workflow includes comprehensive error handling:
+
+**When TMDB API is not configured:**
+- Setting/changing TMDB IDs is disabled
+- "Search for TMDB ID" button is not displayed
+- Direct access to search/confirm pages shows: "TMDB API is not configured"
+
+**When search returns no results:**
+- "No Results Found" message with suggestion to try different search terms
+- Manual entry option remains available
+
+**When TMDB ID validation fails:**
+- Invalid IDs (non-existent or wrong media type) are rejected
+- Error message displayed: "Invalid TMDB ID: [reason]"
+- User can go back and search again
+
+**When metadata download fails:**
+- TMDB ID is still saved successfully
+- Warning logged to server console
+- User can trigger re-download by changing the ID again or restarting the server
+
+### Security Considerations
+
+The TMDB ID management feature includes security measures:
+
+- **Path validation** - All file operations validate paths are within the media directory
+- **Input validation** - TMDB IDs are validated against the TMDB API before saving
+- **Type checking** - Movie IDs cannot be set for TV shows and vice versa
+- **POST-only saves** - TMDB ID changes require POST requests (not GET)
+- **No directory traversal** - File paths are sanitized to prevent accessing files outside the media directory
 
 ## Technical Decisions
 
