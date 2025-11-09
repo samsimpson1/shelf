@@ -35,7 +35,6 @@ env.sh
 
 # Node.js dependencies and artifacts
 node_modules/
-package-lock.json
 
 # Playwright
 playwright-report/
