@@ -3,13 +3,76 @@ package main
 import (
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 )
 
+// printHelp prints the help message showing all configuration options
+func printHelp(w io.Writer) {
+	fmt.Fprintf(w, `Media Backup Manager - A web application for managing media disk backups
+
+Usage:
+  ./shelf           Start the server with default or environment-configured settings
+  ./shelf -help     Show this help message
+  ./shelf --help    Show this help message
+  ./shelf -h        Show this help message
+
+Configuration:
+  The application is configured using environment variables:
+
+  MEDIA_DIR
+      Path to media backup directory
+      Default: /home/sam/Scratch/media/backup
+
+  PORT
+      HTTP server port
+      Default: 8080
+
+  TMDB_API_KEY
+      TMDB API key for metadata fetching (optional)
+      If not set, poster and metadata fetching will be disabled
+      Get your API key at: https://www.themoviedb.org/settings/api
+
+  DEV_MODE
+      Development mode - templates will be reloaded on every request (optional)
+      Set to "true" to enable
+      Default: false
+
+Examples:
+  # Start with defaults
+  ./shelf
+
+  # Start with custom media directory and port
+  MEDIA_DIR=/path/to/media PORT=9000 ./shelf
+
+  # Start with TMDB metadata fetching enabled
+  TMDB_API_KEY=your_api_key_here ./shelf
+
+  # Start in development mode
+  DEV_MODE=true ./shelf
+`)
+}
+
+// shouldShowHelp checks if help flag is present in command-line arguments
+func shouldShowHelp(args []string) bool {
+	for _, arg := range args {
+		if arg == "-help" || arg == "--help" || arg == "-h" {
+			return true
+		}
+	}
+	return false
+}
+
 func main() {
+	// Check for help flag
+	if shouldShowHelp(os.Args) {
+		printHelp(os.Stdout)
+		os.Exit(0)
+	}
+
 	// Read configuration from environment variables
 	mediaDir := os.Getenv("MEDIA_DIR")
 	if mediaDir == "" {
