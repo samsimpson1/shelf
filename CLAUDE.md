@@ -212,6 +212,76 @@ go test -v -run TestIntegrationFetchMovieMetadata
 
 **Note:** These tests make real HTTP requests to the TMDB API and will count against your API rate limits. They are designed to be comprehensive but respectful of API usage.
 
+### End-to-End Tests
+
+The project uses [Playwright](https://playwright.dev/) for comprehensive end-to-end testing of the web interface. These tests verify complete user workflows by running a real browser and interacting with the application as a user would.
+
+**Test Coverage:**
+- Media details page viewing (posters, descriptions, genres, metadata)
+- Copying VLC and MPV play commands from disk lists
+- Setting TMDB IDs for media without one
+- Changing TMDB IDs for media that already have one
+- Importing films with Blu-Ray disk type
+- Importing films with DVD disk type
+- Importing TV shows with Blu-Ray disk type
+- Importing TV shows with DVD disk type
+- Importing media with custom/other disk types
+
+**Test Files:**
+- **[e2e/media-details.spec.ts](e2e/media-details.spec.ts)** - Media detail page viewing tests
+- **[e2e/copy-play-command.spec.ts](e2e/copy-play-command.spec.ts)** - Copy command functionality tests
+- **[e2e/tmdb-management.spec.ts](e2e/tmdb-management.spec.ts)** - TMDB ID management tests
+- **[e2e/import-workflow.spec.ts](e2e/import-workflow.spec.ts)** - Import workflow tests
+
+**Running E2E Tests:**
+
+Prerequisites:
+- Node.js 20 or later
+- npm
+
+```bash
+# Install dependencies
+npm install
+
+# Install Playwright browsers
+npx playwright install
+
+# Build the Go application
+go build -o shelf .
+
+# Run all E2E tests
+npm test
+
+# Run tests in headed mode (see browser)
+npm run test:headed
+
+# Run tests in UI mode (interactive debugging)
+npm run test:ui
+
+# Run tests in debug mode
+npm run test:debug
+
+# View test report
+npm run test:report
+```
+
+**Adding E2E Tests for New Features:**
+
+When adding a new feature to the web interface, you **must** add corresponding E2E tests:
+
+1. Identify the user workflows your feature enables
+2. Create a new test file in `e2e/` (e.g., `e2e/my-feature.spec.ts`)
+3. Write tests covering happy paths and edge cases
+4. Add any necessary test fixtures to `e2e/fixtures/`
+5. Run tests locally to verify they pass
+6. Ensure tests pass in CI before merging
+
+See [E2E_TESTING.md](E2E_TESTING.md) for detailed documentation on writing and debugging E2E tests.
+
+**CI Integration:**
+
+E2E tests run automatically in GitHub Actions on every push and pull request via the `.github/workflows/e2e-tests.yml` workflow. Test reports are uploaded as artifacts for failed runs.
+
 ## Building and Running
 
 ### Build
