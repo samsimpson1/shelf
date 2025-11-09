@@ -333,6 +333,100 @@ func TestReadTMDBIDWithWhitespace(t *testing.T) {
 	}
 }
 
+func TestReadTitle(t *testing.T) {
+	testDir := setupTestData(t)
+	scanner := NewScanner(testDir)
+
+	// War of the Worlds should have title.txt
+	path := filepath.Join(testDir, "War of the Worlds (2025) [Film]")
+	title := scanner.readTitle(path)
+	if title != "War of the Worlds" {
+		t.Errorf("readTitle() = %v, want 'War of the Worlds'", title)
+	}
+
+	// Better Call Saul should have title.txt
+	path = filepath.Join(testDir, "Better Call Saul [TV]")
+	title = scanner.readTitle(path)
+	if title != "Better Call Saul" {
+		t.Errorf("readTitle() = %v, want 'Better Call Saul'", title)
+	}
+
+	// No TMDB film should not have title.txt (fallback case)
+	path = filepath.Join(testDir, "No TMDB (2021) [Film]")
+	title = scanner.readTitle(path)
+	if title != "" {
+		t.Errorf("readTitle() = %v, want empty string", title)
+	}
+
+	// Nonexistent path should return empty string
+	title = scanner.readTitle("/nonexistent/path")
+	if title != "" {
+		t.Errorf("readTitle() for nonexistent path = %v, want empty string", title)
+	}
+}
+
+func TestReadTitleWithWhitespace(t *testing.T) {
+	// Create a temporary directory with a title.txt file containing whitespace
+	tmpDir, err := os.MkdirTemp("", "title-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	titleFile := filepath.Join(tmpDir, "title.txt")
+	err = os.WriteFile(titleFile, []byte("  The Matrix  \n"), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scanner := NewScanner("/tmp")
+	title := scanner.readTitle(tmpDir)
+	if title != "The Matrix" {
+		t.Errorf("readTitle() = %v, want 'The Matrix' (whitespace should be trimmed)", title)
+	}
+}
+
+func TestTitleFromTitleTxtPreferredOverDirectoryName(t *testing.T) {
+	// Create a test directory where title.txt has a different title than directory name
+	tmpDir := t.TempDir()
+
+	// Create film directory with directory name parsing to "Wrong Title"
+	filmDir := filepath.Join(tmpDir, "Wrong Title (2020) [Film]")
+	if err := os.Mkdir(filmDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	filmDiskDir := filepath.Join(filmDir, "Disk [Blu-Ray]")
+	if err := os.Mkdir(filmDiskDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// But title.txt contains the correct TMDB title
+	titleFile := filepath.Join(filmDir, "title.txt")
+	if err := os.WriteFile(titleFile, []byte("Correct TMDB Title"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	scanner := NewScanner(tmpDir)
+	mediaList, err := scanner.Scan()
+	if err != nil {
+		t.Fatalf("Scan() error = %v", err)
+	}
+
+	if len(mediaList) != 1 {
+		t.Fatalf("Scan() returned %d items, want 1", len(mediaList))
+	}
+
+	// Should use title from title.txt, not directory name
+	if mediaList[0].Title != "Correct TMDB Title" {
+		t.Errorf("Media title = %v, want 'Correct TMDB Title' (should prefer title.txt)", mediaList[0].Title)
+	}
+
+	// Year should still come from directory name
+	if mediaList[0].Year != 2020 {
+		t.Errorf("Media year = %v, want 2020", mediaList[0].Year)
+	}
+}
+
 func TestExtractFormat(t *testing.T) {
 	tests := []struct {
 		name     string

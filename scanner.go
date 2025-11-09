@@ -109,6 +109,11 @@ func (s *Scanner) parseFilm(dirName, dirPath string) (Media, bool) {
 	// Read TMDB ID if present
 	media.TMDBID = s.readTMDBID(dirPath)
 
+	// Read title from title.txt if present (prefer TMDB official title)
+	if officialTitle := s.readTitle(dirPath); officialTitle != "" {
+		media.Title = officialTitle
+	}
+
 	// Fetch metadata if TMDB client is configured
 	if s.tmdbClient != nil && media.TMDBID != "" {
 		if err := s.tmdbClient.FetchAndSaveMetadata(&media); err != nil {
@@ -141,6 +146,11 @@ func (s *Scanner) parseTV(dirName, dirPath string) (Media, bool) {
 
 	// Read TMDB ID if present
 	media.TMDBID = s.readTMDBID(dirPath)
+
+	// Read title from title.txt if present (prefer TMDB official title)
+	if officialTitle := s.readTitle(dirPath); officialTitle != "" {
+		media.Title = officialTitle
+	}
 
 	// Fetch metadata if TMDB client is configured
 	if s.tmdbClient != nil && media.TMDBID != "" {
@@ -294,6 +304,19 @@ func (s *Scanner) readTMDBID(dirPath string) string {
 	tmdbPath := filepath.Join(dirPath, "tmdb.txt")
 
 	data, err := os.ReadFile(tmdbPath)
+	if err != nil {
+		return "" // File doesn't exist or can't be read
+	}
+
+	// Trim whitespace and return
+	return strings.TrimSpace(string(data))
+}
+
+// readTitle reads the official title from title.txt file if it exists
+func (s *Scanner) readTitle(dirPath string) string {
+	titlePath := filepath.Join(dirPath, "title.txt")
+
+	data, err := os.ReadFile(titlePath)
 	if err != nil {
 		return "" // File doesn't exist or can't be read
 	}
