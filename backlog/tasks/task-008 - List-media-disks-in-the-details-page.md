@@ -1,10 +1,10 @@
 ---
 id: task-008
 title: List media disks in the details page
-status: In Progress
+status: Done
 assignee: []
 created_date: '2025-11-09 11:07'
-updated_date: '2025-11-09 11:47'
+updated_date: '2025-11-09 11:50'
 labels: []
 dependencies: []
 priority: medium
@@ -53,15 +53,15 @@ Add a detailed disk listing to the media details page that shows each individual
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Disk struct created with Name, Format, and SizeGB fields
-- [ ] #2 Media struct includes Disks slice containing all disk information
-- [ ] #3 Scanner collects individual disk details (name, format, size) during scan
-- [ ] #4 Disk format correctly extracted from bracket notation in directory names
-- [ ] #5 Disk sizes calculated by walking directory tree and summing file sizes
-- [ ] #6 Detail page displays a list/table of all disks for the media item
-- [ ] #7 Disk list shows name, format, and size in GB for each disk
-- [ ] #8 File sizes formatted with proper precision (e.g., '45.2 GB')
-- [ ] #9 Both film and TV disk formats handled correctly
-- [ ] #10 All existing tests updated and passing
-- [ ] #11 New tests added for disk collection and display functionality
+- [x] #1 Disk struct created with Name, Format, and SizeGB fields
+- [x] #2 Media struct includes Disks slice containing all disk information
+- [x] #3 Scanner collects individual disk details (name, format, size) during scan
+- [x] #4 Disk format correctly extracted from bracket notation in directory names
+- [x] #5 Disk sizes calculated by walking directory tree and summing file sizes
+- [x] #6 Detail page displays a list/table of all disks for the media item
+- [x] #7 Disk list shows name, format, and size in GB for each disk
+- [x] #8 File sizes formatted with proper precision (e.g., '45.2 GB')
+- [x] #9 Both film and TV disk formats handled correctly
+- [x] #10 All existing tests updated and passing
+- [x] #11 New tests added for disk collection and display functionality
 <!-- AC:END -->
