@@ -5,6 +5,7 @@ on:
     branches: ["**"]
   pull_request:
     branches: ["**"]
+  workflow_dispatch: {}
 
 jobs:
   test:
@@ -40,8 +41,7 @@ jobs:
   test-with-tmdb:
     name: Test with TMDB Integration
     runs-on: ubuntu-latest
-    if: vars.TMDB_API_KEY != '' || secrets.TMDB_API_KEY != ''
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -53,5 +53,5 @@ jobs:
 
     - name: Run integration tests with TMDB
       env:
-        TMDB_API_KEY: ${{ secrets.TMDB_API_KEY || vars.TMDB_API_KEY }}
+        TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
       run: go test -v -race ./...
