@@ -185,3 +185,112 @@ func TestDiskPlayCommand(t *testing.T) {
 		})
 	}
 }
+
+func TestDiskMPVPlayCommand(t *testing.T) {
+	tests := []struct {
+		name     string
+		disk     Disk
+		prefix   string
+		expected string
+	}{
+		{
+			name: "Blu-Ray disk with no prefix",
+			disk: Disk{
+				Name:   "Disk 1",
+				Format: "Blu-Ray",
+				Path:   "/media/War of the Worlds (2025) [Film]/Disk [Blu-Ray]",
+			},
+			prefix:   "",
+			expected: "mpv bd:// --bluray-device=\"/media/War of the Worlds (2025) [Film]/Disk [Blu-Ray]\"",
+		},
+		{
+			name: "Blu-Ray UHD disk with no prefix",
+			disk: Disk{
+				Name:   "Disk 1",
+				Format: "Blu-Ray UHD",
+				Path:   "/media/The Thing (1982) [Film]/Disk [Blu-Ray UHD]",
+			},
+			prefix:   "",
+			expected: "mpv bd:// --bluray-device=\"/media/The Thing (1982) [Film]/Disk [Blu-Ray UHD]\"",
+		},
+		{
+			name: "DVD disk with no prefix",
+			disk: Disk{
+				Name:   "Disk 1",
+				Format: "DVD",
+				Path:   "/media/Some Movie (2020) [Film]/Disk [DVD]",
+			},
+			prefix:   "",
+			expected: "mpv dvd:// --dvd-device=\"/media/Some Movie (2020) [Film]/Disk [DVD]\"",
+		},
+		{
+			name: "Blu-Ray disk with prefix",
+			disk: Disk{
+				Name:   "Disk 1",
+				Format: "Blu-Ray",
+				Path:   "/media/War of the Worlds (2025) [Film]/Disk [Blu-Ray]",
+			},
+			prefix:   "/mnt/nas",
+			expected: "mpv bd:// --bluray-device=\"/mnt/nas/media/War of the Worlds (2025) [Film]/Disk [Blu-Ray]\"",
+		},
+		{
+			name: "DVD disk with prefix",
+			disk: Disk{
+				Name:   "Series 1 Disk 1",
+				Format: "DVD",
+				Path:   "/media/Better Call Saul [TV]/Series 1 Disk 1 [DVD]",
+			},
+			prefix:   "/mnt/network",
+			expected: "mpv dvd:// --dvd-device=\"/mnt/network/media/Better Call Saul [TV]/Series 1 Disk 1 [DVD]\"",
+		},
+		{
+			name: "Unknown format uses direct file path",
+			disk: Disk{
+				Name:   "Disk 1",
+				Format: "Unknown",
+				Path:   "/media/Some Media/Disk [Unknown]",
+			},
+			prefix:   "",
+			expected: "mpv \"/media/Some Media/Disk [Unknown]\"",
+		},
+		{
+			name: "Case insensitive Blu-Ray matching",
+			disk: Disk{
+				Name:   "Disk 1",
+				Format: "BLU-RAY",
+				Path:   "/media/Movie/Disk [BLU-RAY]",
+			},
+			prefix:   "",
+			expected: "mpv bd:// --bluray-device=\"/media/Movie/Disk [BLU-RAY]\"",
+		},
+		{
+			name: "Case insensitive DVD matching",
+			disk: Disk{
+				Name:   "Disk 1",
+				Format: "dvd",
+				Path:   "/media/Movie/Disk [dvd]",
+			},
+			prefix:   "",
+			expected: "mpv dvd:// --dvd-device=\"/media/Movie/Disk [dvd]\"",
+		},
+		{
+			name: "BluRay without hyphen",
+			disk: Disk{
+				Name:   "Disk 1",
+				Format: "BluRay",
+				Path:   "/media/Movie/Disk [BluRay]",
+			},
+			prefix:   "",
+			expected: "mpv bd:// --bluray-device=\"/media/Movie/Disk [BluRay]\"",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.disk.MPVPlayCommand(tt.prefix)
+			if result != tt.expected {
+				t.Errorf("Disk.MPVPlayCommand() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
