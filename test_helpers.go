@@ -10,9 +10,9 @@ import (
 // This ensures tests have a consistent, isolated environment with automatic cleanup.
 //
 // The structure created is:
-//   - War of the Worlds (2025) [Film] - 1 disk, TMDB ID 755898
-//   - Better Call Saul [TV] - 2 disks (Series 1), TMDB ID 60059
-//   - No TMDB (2021) [Film] - 1 disk, no TMDB ID
+//   - War of the Worlds (2025) [Film] - 1 disk, TMDB ID 755898, title.txt "War of the Worlds"
+//   - Better Call Saul [TV] - 2 disks (Series 1), TMDB ID 60059, title.txt "Better Call Saul"
+//   - No TMDB (2021) [Film] - 1 disk, no TMDB ID, no title.txt (tests fallback)
 //
 // The directory is automatically cleaned up when the test completes via t.TempDir().
 func setupTestData(t *testing.T) string {
@@ -33,6 +33,10 @@ func setupTestData(t *testing.T) string {
 	if err := os.WriteFile(filmTMDB, []byte("755898"), 0644); err != nil {
 		t.Fatalf("Failed to create film tmdb.txt: %v", err)
 	}
+	filmTitle := filepath.Join(filmDir, "title.txt")
+	if err := os.WriteFile(filmTitle, []byte("War of the Worlds"), 0644); err != nil {
+		t.Fatalf("Failed to create film title.txt: %v", err)
+	}
 
 	// Create Better Call Saul [TV]
 	tvDir := filepath.Join(tmpDir, "Better Call Saul [TV]")
@@ -50,6 +54,10 @@ func setupTestData(t *testing.T) string {
 	tvTMDB := filepath.Join(tvDir, "tmdb.txt")
 	if err := os.WriteFile(tvTMDB, []byte("60059"), 0644); err != nil {
 		t.Fatalf("Failed to create TV tmdb.txt: %v", err)
+	}
+	tvTitle := filepath.Join(tvDir, "title.txt")
+	if err := os.WriteFile(tvTitle, []byte("Better Call Saul"), 0644); err != nil {
+		t.Fatalf("Failed to create TV title.txt: %v", err)
 	}
 
 	// Create No TMDB (2021) [Film]

@@ -1,9 +1,10 @@
 ---
 id: task-011
 title: Use title.txt for media display names instead of directory names
-status: To Do
+status: Done
 assignee: []
 created_date: '2025-11-09 12:13'
+updated_date: '2025-11-09 12:26'
 labels:
   - enhancement
   - tmdb
@@ -37,9 +38,9 @@ This will ensure that media is displayed with their correct, official titles fro
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Media with title.txt files display the TMDB official title
-- [ ] #2 Media without title.txt files still display correctly using directory name parsing
-- [ ] #3 Unit tests cover title.txt reading and fallback logic
-- [ ] #4 Integration tests verify end-to-end behavior with both scenarios
-- [ ] #5 No breaking changes to existing functionality
+- [x] #1 Media with title.txt files display the TMDB official title
+- [x] #2 Media without title.txt files still display correctly using directory name parsing
+- [x] #3 Unit tests cover title.txt reading and fallback logic
+- [x] #4 Integration tests verify end-to-end behavior with both scenarios
+- [x] #5 No breaking changes to existing functionality
 <!-- AC:END -->
