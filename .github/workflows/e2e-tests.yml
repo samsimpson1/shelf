@@ -36,14 +36,6 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps chromium
 
-    - name: Create test fixture content
-      run: |
-        # Add dummy content to disk directories for size calculation (100MB = 0.1 GB visible in UI)
-        dd if=/dev/zero of="e2e/fixtures/media/The Matrix (1999) [Film]/Disk [Blu-Ray]/BDMV/index.bdmv" bs=1M count=100 2>/dev/null
-        dd if=/dev/zero of="e2e/fixtures/media/Breaking Bad [TV]/Series 1 Disk 1 [Blu-Ray]/BDMV/index.bdmv" bs=1M count=100 2>/dev/null
-        dd if=/dev/zero of="e2e/fixtures/media/Breaking Bad [TV]/Series 1 Disk 2 [DVD]/VIDEO_TS/VIDEO_TS.IFO" bs=1M count=100 2>/dev/null
-        dd if=/dev/zero of="e2e/fixtures/media/No TMDB Film (2020) [Film]/Disk [DVD]/VIDEO_TS/VIDEO_TS.IFO" bs=1M count=100 2>/dev/null
-
     - name: Run Playwright tests
       run: npm test
       env:

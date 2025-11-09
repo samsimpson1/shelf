@@ -265,6 +265,15 @@ npm run test:debug
 npm run test:report
 ```
 
+**Test Fixtures:**
+
+Test fixtures are automatically generated before tests run - they are NOT stored in the repository:
+
+- **[e2e/setup-fixtures.ts](e2e/setup-fixtures.ts)** - Generates all test data (disk files, metadata, posters)
+- **[e2e/global-setup.ts](e2e/global-setup.ts)** - Playwright global setup that runs fixture generation
+- Fixtures include 3 media items (The Matrix, Breaking Bad, No TMDB Film) and 3 import directories
+- See [e2e/README.md](e2e/README.md) for details on how fixtures work
+
 **Adding E2E Tests for New Features:**
 
 When adding a new feature to the web interface, you **must** add corresponding E2E tests:
@@ -272,7 +281,7 @@ When adding a new feature to the web interface, you **must** add corresponding E
 1. Identify the user workflows your feature enables
 2. Create a new test file in `e2e/` (e.g., `e2e/my-feature.spec.ts`)
 3. Write tests covering happy paths and edge cases
-4. Add any necessary test fixtures to `e2e/fixtures/`
+4. Add any necessary test fixtures by editing [e2e/setup-fixtures.ts](e2e/setup-fixtures.ts)
 5. Run tests locally to verify they pass
 6. Ensure tests pass in CI before merging
 
@@ -280,7 +289,7 @@ See [E2E_TESTING.md](E2E_TESTING.md) for detailed documentation on writing and d
 
 **CI Integration:**
 
-E2E tests run automatically in GitHub Actions on every push and pull request via the `.github/workflows/e2e-tests.yml` workflow. Test reports are uploaded as artifacts for failed runs.
+E2E tests run automatically in GitHub Actions on every push and pull request via the `.github/workflows/e2e-tests.yml` workflow. Fixtures are generated automatically in CI. Test reports are uploaded as artifacts for failed runs.
 
 ## Building and Running
 

@@ -113,12 +113,19 @@ All E2E tests are in the `e2e/` directory:
 
 ### Test Fixtures
 
-Test fixtures are in `e2e/fixtures/`:
+Test fixtures are **automatically generated** before tests run - they are NOT stored in the repository.
 
-- `e2e/fixtures/media/` - Sample media directories for testing
-- `e2e/fixtures/import/` - Sample import directories for testing
+**How it works:**
+- `e2e/setup-fixtures.ts` - Generates all test data (disk files, metadata, posters)
+- `e2e/global-setup.ts` - Playwright global setup that runs fixture generation
+- Fixtures are created in `e2e/fixtures/` at test time
+- See [e2e/README.md](e2e/README.md) for details on how fixtures work
 
-The test server is configured to use these fixtures instead of real media directories.
+**Generated fixtures:**
+- `e2e/fixtures/media/` - 3 sample media items (The Matrix, Breaking Bad, No TMDB Film)
+- `e2e/fixtures/import/` - 3 import directories (raw_bluray, raw_dvd, raw_custom)
+
+The test server is configured to use these auto-generated fixtures instead of real media directories.
 
 ## Writing New Tests
 
@@ -149,7 +156,7 @@ test.describe('Feature Name', () => {
 4. **Handle Async Properly** - Always await async operations
 5. **Verify Outcomes** - Each test should have clear expectations
 6. **Isolate Tests** - Tests should not depend on each other
-7. **Clean Up** - Test fixtures are recreated for each test run
+7. **Clean Up** - Test fixtures are automatically regenerated for each test run
 
 ### Common Patterns
 
@@ -231,9 +238,9 @@ The CI workflow:
 1. Checks out code
 2. Sets up Go and Node.js
 3. Builds the application
-4. Installs Playwright browsers
-5. Creates test fixtures
-6. Runs all tests
+4. Installs Node.js dependencies (including `tsx`)
+5. Installs Playwright browsers
+6. Runs all tests (fixtures auto-generated via `globalSetup`)
 7. Uploads test reports as artifacts
 
 ### Viewing CI Results
@@ -272,7 +279,7 @@ When adding a new feature, you must add corresponding E2E tests:
 1. **Identify User Workflows** - What actions will users take?
 2. **Create Test File** - Add a new `.spec.ts` file in `e2e/`
 3. **Write Test Cases** - Cover happy paths and edge cases
-4. **Add Fixtures** - Create any necessary test data in `e2e/fixtures/`
+4. **Add Fixtures** - Edit `e2e/setup-fixtures.ts` to add any necessary test data
 5. **Verify Locally** - Run tests locally to ensure they pass
 6. **Document** - Add test descriptions explaining what's being verified
 
@@ -320,7 +327,8 @@ test.describe('New Feature', () => {
 
 - Check Node.js version matches CI (v20)
 - Ensure Playwright browsers are installed: `npx playwright install`
-- Verify test fixtures exist: `ls e2e/fixtures/`
+- Verify test fixtures are generated: `npx tsx e2e/setup-fixtures.ts`
+- Check that `tsx` is installed: `npm install`
 
 ### Tests Timeout
 
