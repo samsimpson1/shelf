@@ -1,9 +1,10 @@
 ---
 id: task-013
 title: Add MPV play command option alongside VLC
-status: To Do
+status: Done
 assignee: []
 created_date: '2025-11-09 14:49'
+updated_date: '2025-11-09 14:56'
 labels: []
 dependencies:
   - task-009
@@ -98,17 +99,17 @@ mpv dvd:// --dvd-device="/path/to/disk"
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 MPVPlayCommand() method added to Disk struct
-- [ ] #2 MPVPlayCommand() generates correct mpv bd:// command for Blu-Ray disks
-- [ ] #3 MPVPlayCommand() generates correct mpv dvd:// command for DVD disks
-- [ ] #4 MPVPlayCommand() handles other formats with direct file path
-- [ ] #5 MPVPlayCommand() correctly uses PLAY_URL_PREFIX when provided
-- [ ] #6 MPVPlayCommand() correctly quotes/escapes paths with spaces
-- [ ] #7 Copy MPV Command button displayed next to VLC button for each disk
-- [ ] #8 MPV button click copies mpv command to clipboard
-- [ ] #9 Visual feedback shown after successful copy (reuses existing toast)
-- [ ] #10 Both buttons work correctly on mobile layout
-- [ ] #11 All existing tests continue passing
-- [ ] #12 New tests added for MPVPlayCommand method covering all formats
-- [ ] #13 Template test coverage maintained or improved
+- [x] #1 MPVPlayCommand() method added to Disk struct
+- [x] #2 MPVPlayCommand() generates correct mpv bd:// command for Blu-Ray disks
+- [x] #3 MPVPlayCommand() generates correct mpv dvd:// command for DVD disks
+- [x] #4 MPVPlayCommand() handles other formats with direct file path
+- [x] #5 MPVPlayCommand() correctly uses PLAY_URL_PREFIX when provided
+- [x] #6 MPVPlayCommand() correctly quotes/escapes paths with spaces
+- [x] #7 Copy MPV Command button displayed next to VLC button for each disk
+- [x] #8 MPV button click copies mpv command to clipboard
+- [x] #9 Visual feedback shown after successful copy (reuses existing toast)
+- [x] #10 Both buttons work correctly on mobile layout
+- [x] #11 All existing tests continue passing
+- [x] #12 New tests added for MPVPlayCommand method covering all formats
+- [x] #13 Template test coverage maintained or improved
 <!-- AC:END -->
