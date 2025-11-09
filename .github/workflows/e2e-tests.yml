@@ -10,6 +10,8 @@ jobs:
     name: Playwright E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
 
     steps:
     - name: Checkout code
