@@ -1,9 +1,10 @@
 ---
 id: task-011
 title: Use title.txt for media display names instead of directory names
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2025-11-09 12:13'
+updated_date: '2025-11-09 12:22'
 labels:
   - enhancement
   - tmdb
