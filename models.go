@@ -134,5 +134,5 @@ func (d *Disk) PlayCommand(prefix string) string {
 		fullPath = prefix + d.Path
 	}
 
-	return fmt.Sprintf("vlc %s%s", protocol, fullPath)
+	return fmt.Sprintf("vlc \"%s%s\"", protocol, fullPath)
 }

@@ -92,7 +92,7 @@ func TestDiskPlayCommand(t *testing.T) {
 				Path:   "/media/War of the Worlds (2025) [Film]/Disk [Blu-Ray]",
 			},
 			prefix:   "",
-			expected: "vlc bluray:///media/War of the Worlds (2025) [Film]/Disk [Blu-Ray]",
+			expected: "vlc \"bluray:///media/War of the Worlds (2025) [Film]/Disk [Blu-Ray]\"",
 		},
 		{
 			name: "Blu-Ray UHD disk with no prefix",
@@ -102,7 +102,7 @@ func TestDiskPlayCommand(t *testing.T) {
 				Path:   "/media/The Thing (1982) [Film]/Disk [Blu-Ray UHD]",
 			},
 			prefix:   "",
-			expected: "vlc bluray:///media/The Thing (1982) [Film]/Disk [Blu-Ray UHD]",
+			expected: "vlc \"bluray:///media/The Thing (1982) [Film]/Disk [Blu-Ray UHD]\"",
 		},
 		{
 			name: "DVD disk with no prefix",
@@ -112,7 +112,7 @@ func TestDiskPlayCommand(t *testing.T) {
 				Path:   "/media/Some Movie (2020) [Film]/Disk [DVD]",
 			},
 			prefix:   "",
-			expected: "vlc dvd:///media/Some Movie (2020) [Film]/Disk [DVD]",
+			expected: "vlc \"dvd:///media/Some Movie (2020) [Film]/Disk [DVD]\"",
 		},
 		{
 			name: "Blu-Ray disk with prefix",
@@ -122,7 +122,7 @@ func TestDiskPlayCommand(t *testing.T) {
 				Path:   "/media/War of the Worlds (2025) [Film]/Disk [Blu-Ray]",
 			},
 			prefix:   "/mnt/nas",
-			expected: "vlc bluray:///mnt/nas/media/War of the Worlds (2025) [Film]/Disk [Blu-Ray]",
+			expected: "vlc \"bluray:///mnt/nas/media/War of the Worlds (2025) [Film]/Disk [Blu-Ray]\"",
 		},
 		{
 			name: "DVD disk with prefix",
@@ -132,7 +132,7 @@ func TestDiskPlayCommand(t *testing.T) {
 				Path:   "/media/Better Call Saul [TV]/Series 1 Disk 1 [DVD]",
 			},
 			prefix:   "/mnt/network",
-			expected: "vlc dvd:///mnt/network/media/Better Call Saul [TV]/Series 1 Disk 1 [DVD]",
+			expected: "vlc \"dvd:///mnt/network/media/Better Call Saul [TV]/Series 1 Disk 1 [DVD]\"",
 		},
 		{
 			name: "Unknown format defaults to file protocol",
@@ -142,7 +142,7 @@ func TestDiskPlayCommand(t *testing.T) {
 				Path:   "/media/Some Media/Disk [Unknown]",
 			},
 			prefix:   "",
-			expected: "vlc file:///media/Some Media/Disk [Unknown]",
+			expected: "vlc \"file:///media/Some Media/Disk [Unknown]\"",
 		},
 		{
 			name: "Case insensitive Blu-Ray matching",
@@ -152,7 +152,7 @@ func TestDiskPlayCommand(t *testing.T) {
 				Path:   "/media/Movie/Disk [BLU-RAY]",
 			},
 			prefix:   "",
-			expected: "vlc bluray:///media/Movie/Disk [BLU-RAY]",
+			expected: "vlc \"bluray:///media/Movie/Disk [BLU-RAY]\"",
 		},
 		{
 			name: "Case insensitive DVD matching",
@@ -162,7 +162,7 @@ func TestDiskPlayCommand(t *testing.T) {
 				Path:   "/media/Movie/Disk [dvd]",
 			},
 			prefix:   "",
-			expected: "vlc dvd:///media/Movie/Disk [dvd]",
+			expected: "vlc \"dvd:///media/Movie/Disk [dvd]\"",
 		},
 		{
 			name: "BluRay without hyphen",
@@ -172,7 +172,7 @@ func TestDiskPlayCommand(t *testing.T) {
 				Path:   "/media/Movie/Disk [BluRay]",
 			},
 			prefix:   "",
-			expected: "vlc bluray:///media/Movie/Disk [BluRay]",
+			expected: "vlc \"bluray:///media/Movie/Disk [BluRay]\"",
 		},
 	}
 
