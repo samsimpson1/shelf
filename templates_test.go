@@ -40,7 +40,8 @@ func TestIndexTemplateWithMediaList(t *testing.T) {
 	tmpl := parseTemplate(t, "index.html")
 
 	data := struct {
-		MediaList []Media
+		MediaList     []Media
+		ImportEnabled bool
 	}{
 		MediaList: []Media{
 			{
@@ -60,6 +61,7 @@ func TestIndexTemplateWithMediaList(t *testing.T) {
 				Path:      "/test/better-call-saul",
 			},
 		},
+		ImportEnabled: false,
 	}
 
 	output := executeTemplate(t, tmpl, data)
@@ -87,9 +89,11 @@ func TestIndexTemplateWithEmptyList(t *testing.T) {
 	tmpl := parseTemplate(t, "index.html")
 
 	data := struct {
-		MediaList []Media
+		MediaList     []Media
+		ImportEnabled bool
 	}{
-		MediaList: []Media{},
+		MediaList:     []Media{},
+		ImportEnabled: false,
 	}
 
 	output := executeTemplate(t, tmpl, data)
@@ -112,9 +116,11 @@ func TestIndexTemplateWithNilMediaList(t *testing.T) {
 	tmpl := parseTemplate(t, "index.html")
 
 	data := struct {
-		MediaList []Media
+		MediaList     []Media
+		ImportEnabled bool
 	}{
-		MediaList: nil,
+		MediaList:     nil,
+		ImportEnabled: false,
 	}
 
 	output := executeTemplate(t, tmpl, data)
@@ -130,7 +136,8 @@ func TestIndexTemplateWithSingleItem(t *testing.T) {
 	tmpl := parseTemplate(t, "index.html")
 
 	data := struct {
-		MediaList []Media
+		MediaList     []Media
+		ImportEnabled bool
 	}{
 		MediaList: []Media{
 			{
@@ -141,6 +148,7 @@ func TestIndexTemplateWithSingleItem(t *testing.T) {
 				Path:      "/test/solo",
 			},
 		},
+		ImportEnabled: false,
 	}
 
 	output := executeTemplate(t, tmpl, data)
@@ -170,7 +178,8 @@ func TestIndexTemplateDiskCountPluralization(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			data := struct {
-				MediaList []Media
+				MediaList     []Media
+				ImportEnabled bool
 			}{
 				MediaList: []Media{
 					{
@@ -181,6 +190,7 @@ func TestIndexTemplateDiskCountPluralization(t *testing.T) {
 						Path:      "/test",
 					},
 				},
+				ImportEnabled: false,
 			}
 
 			output := executeTemplate(t, tmpl, data)
@@ -1116,11 +1126,19 @@ func TestAllTemplatesWithTypeComparison(t *testing.T) {
 			// Create appropriate data structures for each template
 			switch tmplName {
 			case "index.html":
-				filmData := struct{ MediaList []Media }{
-					MediaList: []Media{*filmMedia},
+				filmData := struct {
+					MediaList     []Media
+					ImportEnabled bool
+				}{
+					MediaList:     []Media{*filmMedia},
+					ImportEnabled: false,
 				}
-				tvData := struct{ MediaList []Media }{
-					MediaList: []Media{*tvMedia},
+				tvData := struct {
+					MediaList     []Media
+					ImportEnabled bool
+				}{
+					MediaList:     []Media{*tvMedia},
+					ImportEnabled: false,
 				}
 
 				filmOutput := executeTemplate(t, tmpl, filmData)

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Step 5 - Shelf</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        h1 { margin-bottom: 10px; }
+        .breadcrumb { margin-bottom: 20px; color: #666; }
+        .breadcrumb a { color: #0066cc; text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .progress { margin-bottom: 30px; }
+        .progress-bar { display: flex; gap: 10px; }
+        .step { flex: 1; height: 4px; background: #eee; border-radius: 2px; }
+        .step.active { background: #0066cc; }
+        form { background: white; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .radio-group { display: flex; flex-direction: column; gap: 15px; }
+        .radio-option { padding: 15px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; }
+        .radio-option:hover { border-color: #0066cc; }
+        .radio-option input[type="radio"] { margin-right: 10px; }
+        select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; margin-top: 10px; }
+        .btn { background: #0066cc; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        .btn:hover { background: #0052a3; }
+        .help-text { color: #666; font-size: 14px; margin-top: 5px; }
+        .existing-list { display: none; margin-top: 10px; }
+        .existing-list.show { display: block; }
+    </style>
+    <script>
+        function toggleExistingList() {
+            var action = document.querySelector('input[name="action"]:checked').value;
+            var existingList = document.getElementById('existing_list');
+            if (action === 'existing') {
+                existingList.classList.add('show');
+                document.getElementById('existing_media').required = true;
+            } else {
+                existingList.classList.remove('show');
+                document.getElementById('existing_media').required = false;
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="breadcrumb">
+        <a href="/import">← Cancel Import</a>
+    </div>
+
+    <h1>Import Media - Step 5 of 5</h1>
+    <div class="progress">
+        <div class="progress-bar">
+            <div class="step active"></div>
+            <div class="step active"></div>
+            <div class="step active"></div>
+            <div class="step active"></div>
+            <div class="step active"></div>
+        </div>
+    </div>
+
+    <h2 style="margin-bottom: 20px;">Add to Existing or Create New?</h2>
+
+    <form method="POST">
+        <div class="form-group">
+            <div class="radio-group">
+                <div class="radio-option">
+                    <input type="radio" id="new" name="action" value="new" onchange="toggleExistingList()" checked>
+                    <label for="new">Create new media entry</label>
+                    <div class="help-text">Create a new media directory for this disk</div>
+                </div>
+
+                <div class="radio-option">
+                    <input type="radio" id="existing" name="action" value="existing" onchange="toggleExistingList()">
+                    <label for="existing">Add to existing media</label>
+                    <div class="help-text">Add this disk to an existing media entry (for multi-disk releases)</div>
+
+                    <div id="existing_list" class="existing-list">
+                        <select id="existing_media" name="existing_media">
+                            <option value="" disabled selected>-- Select Existing Media --</option>
+                            {{range .CompatibleMedia}}
+                            <option value="{{.Slug}}">{{.DisplayTitle}} ({{.DiskCount}} disk{{if ne .DiskCount 1}}s{{end}})</option>
+                            {{end}}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn">Next: Review & Confirm</button>
+    </form>
+</body>
+</html>

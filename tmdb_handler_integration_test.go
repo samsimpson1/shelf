@@ -191,7 +191,7 @@ func setupAppWithMockTMDB(t *testing.T) (*App, *httptest.Server, string) {
 	}
 
 	// Create app
-	app := NewApp(mediaList, tmpl, testDir)
+	app := NewApp(mediaList, tmpl, testDir, "")
 
 	// Create mock TMDB server
 	mockServer := mockTMDBServer()
@@ -212,7 +212,7 @@ func TestSearchTMDBHandler_NoTMDBClient(t *testing.T) {
 	scanner := NewScanner(testDir)
 	mediaList, _ := scanner.Scan()
 	tmpl, _ := template.ParseFiles("templates/search.html")
-	app := NewApp(mediaList, tmpl, testDir)
+	app := NewApp(mediaList, tmpl, testDir, "")
 
 	req := httptest.NewRequest(http.MethodGet, "/media/war-of-the-worlds-2025/search-tmdb", nil)
 	w := httptest.NewRecorder()
@@ -298,7 +298,7 @@ func TestConfirmTMDBHandler_NoTMDBClient(t *testing.T) {
 	scanner := NewScanner(testDir)
 	mediaList, _ := scanner.Scan()
 	tmpl, _ := template.ParseFiles("templates/confirm.html")
-	app := NewApp(mediaList, tmpl, testDir)
+	app := NewApp(mediaList, tmpl, testDir, "")
 
 	req := httptest.NewRequest(http.MethodGet, "/media/war-of-the-worlds-2025/confirm-tmdb?id=550", nil)
 	w := httptest.NewRecorder()
@@ -378,7 +378,7 @@ func TestSaveTMDBHandler_NoTMDBClient(t *testing.T) {
 	scanner := NewScanner(testDir)
 	mediaList, _ := scanner.Scan()
 	tmpl, _ := template.ParseFiles("templates/detail.html")
-	app := NewApp(mediaList, tmpl, testDir)
+	app := NewApp(mediaList, tmpl, testDir, "")
 
 	form := url.Values{}
 	form.Add("tmdb_id", "550")

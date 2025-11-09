@@ -40,11 +40,22 @@ A simple Go web application that scans and displays media disk backups (BDMV, DV
    - Poster image serving with security validation
    - Detail page routing with slug-based URLs
 
-5. **Main** ([main.go](main.go))
+5. **Import System** ([import.go](import.go), [import_handlers.go](import_handlers.go))
+   - Import directory scanning for raw disk backups
+   - Multi-step import workflow with web UI
+   - TMDB search integration for automatic metadata
+   - Manual title/year entry option
+   - Disk type detection (Blu-ray, DVD, custom)
+   - Name sanitization for filesystem compatibility
+   - Add to existing media or create new entries
+   - File moving and validation
+
+6. **Main** ([main.go](main.go))
    - Application entry point
    - Environment-based configuration
    - HTTP server setup
    - Optional TMDB client initialization
+   - Optional import scanner initialization
 
 ### Directory Structure Parsing
 
@@ -85,8 +96,9 @@ Title [TV]/
 The application uses environment variables for configuration:
 
 - `MEDIA_DIR` - Path to media backup directory (default: `/home/sam/Scratch/media/backup`)
+- `IMPORT_DIR` - Path to import directory for raw disk backups (optional, import functionality disabled if not set)
 - `PORT` - HTTP server port (default: `8080`)
-- `TMDB_API_KEY` - TMDB API key for poster fetching (optional, poster fetching disabled if not set)
+- `TMDB_API_KEY` - TMDB API key for metadata fetching (optional, metadata fetching disabled if not set)
 
 ### Getting a TMDB API Key
 
@@ -124,6 +136,7 @@ The project achieves 54.7% code coverage with comprehensive tests:
 - **[scanner_test.go](scanner_test.go)** - Tests for directory parsing, disk counting, TMDB ID reading, scanner with TMDB client, and error handling
 - **[handlers_test.go](handlers_test.go)** - Tests for HTTP handlers, template rendering, and sorting logic
 - **[tmdb_test.go](tmdb_test.go)** - Tests for TMDB client, metadata fetching (movies/TV), poster/description/genre/title saving, and file caching
+- **[import_test.go](import_test.go)** - Tests for import scanner, disk type detection, name sanitization, directory name generation, and import execution
 
 ### Integration Tests
 
@@ -256,6 +269,7 @@ The web UI features a modern poster-based design:
 - `/media/{slug}/search-tmdb` - TMDB ID search page
 - `/media/{slug}/confirm-tmdb` - TMDB match confirmation page
 - `/media/{slug}/set-tmdb` - TMDB ID save endpoint (POST only)
+- `/import` - Import media workflow (see Import Media section for full routing)
 
 ## TMDB ID Management
 
@@ -392,6 +406,147 @@ The TMDB ID management feature includes security measures:
 - **Type checking** - Movie IDs cannot be set for TV shows and vice versa
 - **POST-only saves** - TMDB ID changes require POST requests (not GET)
 - **No directory traversal** - File paths are sanitized to prevent accessing files outside the media directory
+
+## Import Media
+
+The import functionality streamlines the process of organizing raw disk backups (from tools like MakeMKV) into the proper MEDIA_DIR structure. This feature requires the `IMPORT_DIR` environment variable to be set.
+
+### Setting Up Import
+
+1. **Configure IMPORT_DIR** - Set the environment variable to point to your raw disk backup directory:
+   ```bash
+   export IMPORT_DIR=/path/to/raw/backups
+   ```
+
+2. **Access Import UI** - When IMPORT_DIR is configured, an "Import Media" button appears on the main library page
+
+### Import Workflow
+
+The import process is a guided 5-step workflow:
+
+**Step 1: Select Directory**
+- View all directories in IMPORT_DIR
+- See directory sizes to identify which backup to import
+- Click "Import" to begin
+
+**Step 2: Choose Media Type**
+- Select whether the disk is a Film or TV Show
+- Disk type is auto-detected when possible (Blu-ray BDMV, DVD VIDEO_TS)
+
+**Step 3: Search TMDB or Manual Entry**
+- **Option A: TMDB Search** (if TMDB_API_KEY is configured)
+  - Search for the media by title
+  - For films, optionally filter by year
+  - Select the correct match from search results
+  - Title, year, and metadata are fetched automatically
+- **Option B: Manual Entry**
+  - Enter title manually
+  - For films, enter the release year
+  - Skip TMDB integration entirely
+
+**Step 4: Disk Details**
+- **For TV Shows:**
+  - Enter series (season) number
+  - Enter disk number within that series
+- **For Films:**
+  - Disk number defaults to 1
+- **Disk Type:**
+  - Auto-detected types: Blu-Ray, DVD
+  - Manual options: Blu-Ray, Blu-Ray UHD, DVD, or custom text
+  - Custom types allow any format description (e.g., "4K HDR", "BDMV")
+
+**Step 5: Add to Existing or Create New**
+- **Create New Media Entry** - Creates a new media directory
+- **Add to Existing Media** - Adds the disk to an existing media item (for multi-disk releases)
+  - Shows compatible existing media of the same type
+  - Useful for adding additional disks to a film or TV series
+
+**Step 6: Confirm and Execute**
+- Review all import details
+- Preview the destination path
+- Confirm to execute the import
+- Source directory is moved to the destination with proper naming
+
+### Import Features
+
+**Automatic Disk Type Detection:**
+- Detects Blu-ray disks (BDMV directory structure)
+- Detects DVD disks (VIDEO_TS directory structure)
+- Allows manual override for any disk type
+
+**Name Sanitization:**
+- Problematic characters are automatically sanitized for filesystem compatibility:
+  - Colons (`:`) → underscores (`_`)
+  - Slashes (`/`, `\`) → underscores
+  - Quotes (`"`) → apostrophes (`'`)
+  - Other invalid characters (`<`, `>`, `|`, `?`, `*`) → underscores
+  - Multiple consecutive underscores are collapsed to single underscores
+- Maintains readability while ensuring cross-platform compatibility
+
+**TMDB Integration:**
+- When a TMDB match is selected, the official title and year are used
+- TMDB ID is saved to `tmdb.txt` in the media directory
+- Metadata (poster, description, genres) can be downloaded immediately
+- Or defer metadata download until next server restart
+
+**Directory Organization:**
+- Films: `Title (Year) [Film]/Disk [Format]/`
+- TV Shows: `Title [TV]/Series X Disk Y [Format]/`
+- Format is preserved from disk type selection
+
+**Validation:**
+- Prevents importing to paths that already exist
+- Ensures IMPORT_DIR and MEDIA_DIR are accessible
+- Validates all user input before moving files
+
+### Import Routing
+
+- `/import` - List of directories available for import
+- `/import/start` - Start import workflow for selected directory
+- `/import/step1` - Choose media type (Film/TV)
+- `/import/step2` - TMDB search or skip
+- `/import/step3` - Manual title/year entry
+- `/import/step4` - Disk details and type selection
+- `/import/step5` - Add to existing or create new
+- `/import/confirm` - Final confirmation with preview
+- `/import/execute` - Execute the import (POST only)
+- `/import/success` - Success confirmation page
+
+### Import Security
+
+The import feature includes security measures:
+
+- **Path validation** - All file operations validate paths are within IMPORT_DIR and MEDIA_DIR
+- **No directory traversal** - Sanitized paths prevent accessing files outside allowed directories
+- **POST-only execution** - Import execution requires POST requests
+- **Session isolation** - Each import workflow uses a unique session ID
+- **Input validation** - All user input is validated before file operations
+
+### Example Import Scenarios
+
+**Scenario 1: New Film with TMDB**
+1. Place raw Blu-ray backup in IMPORT_DIR (e.g., "Matrix_BDMV")
+2. Navigate to Import page
+3. Select "Matrix_BDMV" and click Import
+4. Choose "Film"
+5. Search TMDB for "The Matrix", select 1999 release
+6. Confirm Blu-Ray disk type (auto-detected)
+7. Choose "Create new media entry"
+8. Confirm import
+
+Result: `The Matrix (1999) [Film]/Disk [Blu-Ray]/` with TMDB metadata
+
+**Scenario 2: Adding TV Show Disk to Existing Series**
+1. Place raw DVD backup in IMPORT_DIR
+2. Navigate to Import page and click Import
+3. Choose "TV Show"
+4. Skip TMDB or search for the show
+5. Enter Series 2, Disk 3
+6. Confirm DVD disk type (auto-detected)
+7. Choose "Add to existing media" and select your TV show
+8. Confirm import
+
+Result: Disk added to existing TV show directory as `Series 2 Disk 3 [DVD]/`
 
 ## Technical Decisions
 

@@ -26,7 +26,7 @@ func TestIntegrationScanAndServe(t *testing.T) {
 	}
 
 	// Create app
-	app := NewApp(mediaList, tmpl, testDir)
+	app := NewApp(mediaList, tmpl, testDir, "")
 
 	// Create test request
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -87,7 +87,7 @@ func TestIntegrationWithEmptyDirectory(t *testing.T) {
 	}
 
 	// Create app and serve
-	app := NewApp(mediaList, tmpl, tmpDir)
+	app := NewApp(mediaList, tmpl, tmpDir, "")
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
 	app.IndexHandler(w, req)
@@ -248,7 +248,7 @@ func TestIntegrationEndToEnd(t *testing.T) {
 	}
 
 	// Create app
-	app := NewApp(mediaList, tmpl, testDir)
+	app := NewApp(mediaList, tmpl, testDir, "")
 
 	// Create HTTP server
 	mux := http.NewServeMux()

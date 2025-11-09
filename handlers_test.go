@@ -94,7 +94,7 @@ func TestIndexHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app := NewApp(tt.mediaList, tmpl, "/test/media")
+			app := NewApp(tt.mediaList, tmpl, "/test/media", "")
 
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
 			w := httptest.NewRecorder()
@@ -129,7 +129,7 @@ func TestIndexHandlerSorting(t *testing.T) {
 		{Title: "Gamma Film", Type: Film, Year: 2021, DiskCount: 1, Path: "/test/g"},
 	}
 
-	app := NewApp(mediaList, tmpl, "/test/media")
+	app := NewApp(mediaList, tmpl, "/test/media", "")
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
@@ -152,7 +152,7 @@ func TestNewApp(t *testing.T) {
 	}
 	tmpl := template.Must(template.New("test").Parse("test"))
 
-	app := NewApp(mediaList, tmpl, "/test/media")
+	app := NewApp(mediaList, tmpl, "/test/media", "")
 
 	if app == nil {
 		t.Fatal("NewApp() returned nil")
@@ -291,7 +291,7 @@ func TestDetailHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app := NewApp(tt.mediaList, tmpl, "/test/media")
+			app := NewApp(tt.mediaList, tmpl, "/test/media", "")
 
 			req := httptest.NewRequest(http.MethodGet, tt.requestPath, nil)
 			w := httptest.NewRecorder()
@@ -329,7 +329,7 @@ func TestFindMediaBySlug(t *testing.T) {
 	}
 
 	tmpl := template.Must(template.New("test").Parse("test"))
-	app := NewApp(mediaList, tmpl, "/test/media")
+	app := NewApp(mediaList, tmpl, "/test/media", "")
 
 	tests := []struct {
 		name      string
