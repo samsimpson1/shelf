@@ -6,7 +6,10 @@
       "Bash(go build:*)",
       "mcp__backlog",
       "Bash(curl:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(npm test)",
+      "Bash(ls:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
