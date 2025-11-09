@@ -40,3 +40,6 @@ node_modules/
 playwright-report/
 test-results/
 .playwright/
+
+# Disk size cache files
+sizes.json
