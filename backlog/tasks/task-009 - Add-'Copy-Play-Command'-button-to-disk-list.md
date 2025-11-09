@@ -4,7 +4,7 @@ title: Add 'Copy Play Command' button to disk list
 status: To Do
 assignee: []
 created_date: '2025-11-09 11:09'
-updated_date: '2025-11-09 11:10'
+updated_date: '2025-11-09 11:11'
 labels: []
 dependencies:
   - task-008
@@ -40,6 +40,7 @@ vlc bluray:///mnt/media/War of the Worlds (2025) [Film]/Disk [Blu-Ray UHD]
 1. **Add environment variable** in [main.go](main.go):
    - Add `PLAY_URL_PREFIX` environment variable (optional, defaults to empty string or local path)
    - Pass to handlers/templates for URL construction
+   - Update `printHelp()` function ([main.go:14](main.go#L14)) to document the new PLAY_URL_PREFIX environment variable
 
 2. **Update Disk struct** in [models.go](models.go):
    - Add `Path` field to store full disk directory path
@@ -70,6 +71,7 @@ vlc bluray:///mnt/media/War of the Worlds (2025) [Film]/Disk [Blu-Ray UHD]
    - Test environment variable handling
    - Test different disk formats generate correct protocol (bluray:// vs dvd://)
    - Update template tests to verify button presence
+   - Add test for help text including PLAY_URL_PREFIX
 
 ## Protocol Selection
 - Blu-Ray formats → `bluray://` protocol
@@ -81,15 +83,17 @@ vlc bluray:///mnt/media/War of the Worlds (2025) [Film]/Disk [Blu-Ray UHD]
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 PLAY_URL_PREFIX environment variable added and configurable
-- [ ] #2 Disk struct includes Path field storing disk directory path
-- [ ] #3 Disk.PlayCommand() method generates correct VLC command format
-- [ ] #4 Copy Play Command button displayed for each disk in the list
-- [ ] #5 Button click copies VLC command to clipboard
-- [ ] #6 Visual feedback shown after successful copy (toast/button text change)
-- [ ] #7 Correct protocol used based on disk format (bluray://, dvd://, file://)
-- [ ] #8 JavaScript clipboard API implemented with fallback for older browsers
-- [ ] #9 Error handling for clipboard failures
-- [ ] #10 PLAY_URL_PREFIX passed to templates and used in command generation
-- [ ] #11 All existing tests updated and passing
-- [ ] #12 New tests added for PlayCommand method and protocol selection
+- [ ] #2 Help text updated to document PLAY_URL_PREFIX environment variable
+- [ ] #3 Disk struct includes Path field storing disk directory path
+- [ ] #4 Disk.PlayCommand() method generates correct VLC command format
+- [ ] #5 Copy Play Command button displayed for each disk in the list
+- [ ] #6 Button click copies VLC command to clipboard
+- [ ] #7 Visual feedback shown after successful copy (toast/button text change)
+- [ ] #8 Correct protocol used based on disk format (bluray://, dvd://, file://)
+- [ ] #9 JavaScript clipboard API implemented with fallback for older browsers
+- [ ] #10 Error handling for clipboard failures
+- [ ] #11 PLAY_URL_PREFIX passed to templates and used in command generation
+- [ ] #12 All existing tests updated and passing
+
+- [ ] #13 New tests added for PlayCommand method and protocol selection
 <!-- AC:END -->
