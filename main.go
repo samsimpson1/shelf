@@ -27,6 +27,11 @@ Configuration:
       Path to media backup directory
       Default: /home/sam/Scratch/media/backup
 
+  IMPORT_DIR
+      Path to import directory for organizing raw disk backups (optional)
+      If not set, import functionality will be disabled
+      Default: empty
+
   PORT
       HTTP server port
       Default: 8080
@@ -87,6 +92,11 @@ func main() {
 		mediaDir = "/home/sam/Scratch/media/backup"
 	}
 
+	importDir := os.Getenv("IMPORT_DIR")
+	if importDir == "" {
+		log.Println("Warning: IMPORT_DIR not set, import functionality will be disabled")
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -144,13 +154,21 @@ func main() {
 		"templates/detail.html",
 		"templates/search.html",
 		"templates/confirm.html",
+		"templates/import_list.html",
+		"templates/import_step1.html",
+		"templates/import_step2.html",
+		"templates/import_step3.html",
+		"templates/import_step4.html",
+		"templates/import_step5.html",
+		"templates/import_confirm.html",
+		"templates/import_success.html",
 	)
 	if err != nil {
 		log.Fatalf("Failed to load templates: %v", err)
 	}
 
 	// Create app
-	app := NewApp(mediaList, tmpl, mediaDir)
+	app := NewApp(mediaList, tmpl, mediaDir, importDir)
 	app.SetDevMode(devMode)
 	app.SetPlayURLPrefix(playURLPrefix)
 
@@ -163,6 +181,19 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", app.IndexHandler)
 	mux.HandleFunc("/posters/", app.PosterHandler)
+
+	// Import routes
+	mux.HandleFunc("/import", app.ImportListHandler)
+	mux.HandleFunc("/import/start", app.ImportStartHandler)
+	mux.HandleFunc("/import/step1", app.ImportStep1Handler)
+	mux.HandleFunc("/import/step2", app.ImportStep2Handler)
+	mux.HandleFunc("/import/step2/confirm", app.ImportStep2ConfirmHandler)
+	mux.HandleFunc("/import/step3", app.ImportStep3Handler)
+	mux.HandleFunc("/import/step4", app.ImportStep4Handler)
+	mux.HandleFunc("/import/step5", app.ImportStep5Handler)
+	mux.HandleFunc("/import/confirm", app.ImportConfirmHandler)
+	mux.HandleFunc("/import/execute", app.ImportExecuteHandler)
+	mux.HandleFunc("/import/success", app.ImportSuccessHandler)
 
 	// TMDB routes (must come before the general /media/ route)
 	mux.HandleFunc("/media/", func(w http.ResponseWriter, r *http.Request) {

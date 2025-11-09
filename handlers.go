@@ -14,20 +14,29 @@ import (
 
 // App holds the application state
 type App struct {
-	mediaList     []Media
-	templates     *template.Template
-	mediaDir      string
-	devMode       bool // Enable template hot-reloading in development
-	tmdbClient    *TMDBClient
-	playURLPrefix string // URL prefix for play commands
+	mediaList      []Media
+	templates      *template.Template
+	mediaDir       string
+	importDir      string // Path to import directory
+	importScanner  *ImportScanner
+	devMode        bool // Enable template hot-reloading in development
+	tmdbClient     *TMDBClient
+	playURLPrefix  string // URL prefix for play commands
 }
 
 // NewApp creates a new App instance
-func NewApp(mediaList []Media, templates *template.Template, mediaDir string) *App {
+func NewApp(mediaList []Media, templates *template.Template, mediaDir, importDir string) *App {
+	var importScanner *ImportScanner
+	if importDir != "" {
+		importScanner = NewImportScanner(importDir)
+	}
+
 	return &App{
 		mediaList:     mediaList,
 		templates:     templates,
 		mediaDir:      mediaDir,
+		importDir:     importDir,
+		importScanner: importScanner,
 		devMode:       false,
 		tmdbClient:    nil,
 		playURLPrefix: "",
@@ -56,6 +65,14 @@ func (app *App) loadTemplates() *template.Template {
 		"templates/detail.html",
 		"templates/search.html",
 		"templates/confirm.html",
+		"templates/import_list.html",
+		"templates/import_step1.html",
+		"templates/import_step2.html",
+		"templates/import_step3.html",
+		"templates/import_step4.html",
+		"templates/import_step5.html",
+		"templates/import_confirm.html",
+		"templates/import_success.html",
 	)
 	if err != nil {
 		log.Printf("Error reloading templates: %v", err)
@@ -86,9 +103,11 @@ func (app *App) IndexHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	data := struct {
-		MediaList []Media
+		MediaList     []Media
+		ImportEnabled bool
 	}{
-		MediaList: sorted,
+		MediaList:     sorted,
+		ImportEnabled: app.importScanner != nil,
 	}
 
 	err := tmpl.ExecuteTemplate(w, "index.html", data)

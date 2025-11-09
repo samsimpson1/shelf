@@ -19,7 +19,12 @@
     </style>
 </head>
 <body>
-    <h1>Shelf</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1 style="margin: 0;">Shelf</h1>
+        {{if .ImportEnabled}}
+        <a href="/import" style="background: #0066cc; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-size: 14px;">Import Media</a>
+        {{end}}
+    </div>
     {{if .MediaList}}
     <div class="grid">
         {{range .MediaList}}
