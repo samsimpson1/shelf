@@ -4,6 +4,7 @@ title: Add Playwright end-to-end tests for all user journeys
 status: To Do
 assignee: []
 created_date: '2025-11-09 15:03'
+updated_date: '2025-11-09 15:04'
 labels: []
 dependencies: []
 priority: high
@@ -39,4 +40,7 @@ This will improve confidence in deployments and catch regressions in the user in
 - [ ] #12 Playwright tests are integrated into CI pipeline (GitHub Actions)
 - [ ] #13 All tests pass consistently in both local and CI environments
 - [ ] #14 Test documentation is added explaining how to run tests and write new ones
+
+- [ ] #15 Documentation (CLAUDE.md) is updated to require E2E tests for all new features
+- [ ] #16 Contributing guidelines or testing section explains when and how to write E2E tests
 <!-- AC:END -->
