@@ -129,15 +129,21 @@ func main() {
 		log.Fatalf("Media path is not a directory: %s", mediaDir)
 	}
 
-	// Create scanner with optional TMDB client
+	// Create scanner with optional TMDB and MusicBrainz clients
 	var scanner *Scanner
 	var tmdbClient *TMDBClient
+	var musicBrainzClient *MusicBrainzClient
+
+	// Always create MusicBrainz client (no API key required)
+	musicBrainzClient = NewMusicBrainzClient()
+	log.Println("MusicBrainz client initialized for track list fetching")
+
 	if tmdbAPIKey != "" {
 		log.Println("TMDB API key configured, poster fetching enabled")
 		tmdbClient = NewTMDBClient(tmdbAPIKey)
-		scanner = NewScannerWithTMDB(mediaDir, tmdbClient)
+		scanner = NewScannerWithClients(mediaDir, tmdbClient, musicBrainzClient)
 	} else {
-		scanner = NewScanner(mediaDir)
+		scanner = NewScannerWithClients(mediaDir, nil, musicBrainzClient)
 	}
 
 	// Scan media directory

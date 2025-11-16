@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -37,6 +38,36 @@ type Disk struct {
 	Format string  // Disk format (e.g., "Blu-Ray", "DVD", "Blu-Ray UHD")
 	SizeGB float64 // Disk size in gigabytes
 	Path   string  // Absolute path to the disk directory
+}
+
+// Track represents an individual track on a music release
+type Track struct {
+	Position string `json:"position"` // Track position (e.g., "1", "A1", "2.3")
+	Title    string `json:"title"`    // Track title
+	Duration int    `json:"duration"` // Duration in milliseconds
+}
+
+// FormatDuration returns the track duration formatted as mm:ss
+func (t *Track) FormatDuration() string {
+	if t.Duration == 0 {
+		return ""
+	}
+	totalSeconds := t.Duration / 1000
+	minutes := totalSeconds / 60
+	seconds := totalSeconds % 60
+	return fmt.Sprintf("%d:%02d", minutes, seconds)
+}
+
+// Medium represents a disc/medium in a music release
+type Medium struct {
+	Position int     `json:"position"` // Medium position (disc number)
+	Format   string  `json:"format"`   // Format (e.g., "CD", "Vinyl", "Digital Media")
+	Tracks   []Track `json:"tracks"`   // Tracks on this medium
+}
+
+// TrackList represents the complete track listing for a music release
+type TrackList struct {
+	Media []Medium `json:"media"` // All media/discs in the release
 }
 
 // Media represents a media item from the backup directory
@@ -116,6 +147,22 @@ func (m *Media) LoadGenres() []string {
 		genres[i] = strings.TrimSpace(genres[i])
 	}
 	return genres
+}
+
+// LoadTrackList reads and returns the track list from tracks.json
+func (m *Media) LoadTrackList() *TrackList {
+	tracksPath := filepath.Join(m.Path, "tracks.json")
+	data, err := os.ReadFile(tracksPath)
+	if err != nil {
+		return nil
+	}
+
+	var trackList TrackList
+	if err := json.Unmarshal(data, &trackList); err != nil {
+		return nil
+	}
+
+	return &trackList
 }
 
 // PlayCommand generates a VLC play command for the disk

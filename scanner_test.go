@@ -914,3 +914,34 @@ func TestSaveSizeCache(t *testing.T) {
 		t.Errorf("Loaded cache has wrong size for DVD disk")
 	}
 }
+
+func TestNewScannerWithClients(t *testing.T) {
+	tmdbClient := NewTMDBClient("test-key")
+	musicBrainzClient := NewMusicBrainzClient()
+	scanner := NewScannerWithClients("/test/path", tmdbClient, musicBrainzClient)
+
+	if scanner.mediaDir != "/test/path" {
+		t.Errorf("NewScannerWithClients() mediaDir = %v, want /test/path", scanner.mediaDir)
+	}
+	if scanner.tmdbClient == nil {
+		t.Error("NewScannerWithClients() should have TMDB client")
+	}
+	if scanner.musicBrainzClient == nil {
+		t.Error("NewScannerWithClients() should have MusicBrainz client")
+	}
+}
+
+func TestNewScannerWithClientsNilTMDB(t *testing.T) {
+	musicBrainzClient := NewMusicBrainzClient()
+	scanner := NewScannerWithClients("/test/path", nil, musicBrainzClient)
+
+	if scanner.mediaDir != "/test/path" {
+		t.Errorf("NewScannerWithClients() mediaDir = %v, want /test/path", scanner.mediaDir)
+	}
+	if scanner.tmdbClient != nil {
+		t.Error("NewScannerWithClients() should not have TMDB client")
+	}
+	if scanner.musicBrainzClient == nil {
+		t.Error("NewScannerWithClients() should have MusicBrainz client")
+	}
+}

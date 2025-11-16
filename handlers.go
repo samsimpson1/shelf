@@ -206,18 +206,21 @@ func (app *App) DetailHandler(w http.ResponseWriter, r *http.Request) {
 	description := media.LoadDescription()
 	genres := media.LoadGenres()
 	_, hasPoster := media.FindPosterFile()
+	trackList := media.LoadTrackList()
 
 	data := struct {
 		Media         *Media
 		Description   string
 		Genres        []string
 		HasPoster     bool
+		TrackList     *TrackList
 		PlayURLPrefix string
 	}{
 		Media:         media,
 		Description:   description,
 		Genres:        genres,
 		HasPoster:     hasPoster,
+		TrackList:     trackList,
 		PlayURLPrefix: app.playURLPrefix,
 	}
 
