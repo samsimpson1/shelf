@@ -1,10 +1,10 @@
 ---
 id: task-015
 title: Create Dockerfile for the shelf application
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2025-11-09 17:49'
-updated_date: '2025-11-16 14:21'
+updated_date: '2025-11-16 14:22'
 labels: []
 dependencies: []
 priority: high
