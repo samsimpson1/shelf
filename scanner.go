@@ -22,8 +22,9 @@ var (
 
 // Scanner scans a directory for media items
 type Scanner struct {
-	mediaDir   string
-	tmdbClient *TMDBClient
+	mediaDir          string
+	tmdbClient        *TMDBClient
+	musicBrainzClient *MusicBrainzClient
 }
 
 // NewScanner creates a new Scanner for the given directory
@@ -36,6 +37,15 @@ func NewScannerWithTMDB(mediaDir string, tmdbClient *TMDBClient) *Scanner {
 	return &Scanner{
 		mediaDir:   mediaDir,
 		tmdbClient: tmdbClient,
+	}
+}
+
+// NewScannerWithClients creates a new Scanner with TMDB and MusicBrainz clients
+func NewScannerWithClients(mediaDir string, tmdbClient *TMDBClient, musicBrainzClient *MusicBrainzClient) *Scanner {
+	return &Scanner{
+		mediaDir:          mediaDir,
+		tmdbClient:        tmdbClient,
+		musicBrainzClient: musicBrainzClient,
 	}
 }
 
@@ -196,6 +206,13 @@ func (s *Scanner) parseMusic(dirName, dirPath string) (Media, bool) {
 	// Read title from title.txt if present (local metadata only, no TMDB)
 	if officialTitle := s.readTitle(dirPath); officialTitle != "" {
 		media.Title = officialTitle
+	}
+
+	// Fetch track list if MusicBrainz client is configured
+	if s.musicBrainzClient != nil && media.MusicBrainzID != "" {
+		if err := s.musicBrainzClient.FetchAndSaveTrackList(&media); err != nil {
+			log.Printf("Warning: Failed to fetch track list for %s: %v", media.Title, err)
+		}
 	}
 
 	// Note: Music does NOT integrate with TMDB - all metadata is local only
