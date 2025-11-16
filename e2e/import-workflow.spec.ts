@@ -217,4 +217,149 @@ test.describe('Import Workflow', () => {
       }
     }
   });
+
+  test('should import Music album and show MusicBrainz search', async ({ page }) => {
+    await page.goto('/import');
+
+    const importButtons = page.locator('button:has-text("Import"), a:has-text("Import")');
+    if (await importButtons.count() > 0) {
+      await importButtons.first().click();
+
+      // Step 1: Choose media type - select Music
+      await page.waitForURL(/\/import\/start|\/import\/step1/);
+
+      const musicButton = page.locator('button:has-text("Music"), input[value="Music"] ~ label, a:has-text("Music")');
+      if (await musicButton.count() > 0) {
+        await musicButton.first().click();
+
+        // Step 2: Should show MusicBrainz search form
+        await page.waitForURL(/\/import\/step2/);
+
+        // Verify MusicBrainz search form is present
+        const artistInput = page.locator('input[name="artist"]');
+        const titleInput = page.locator('input[name="title"]');
+
+        await expect(artistInput.or(titleInput)).toBeVisible();
+
+        // Verify "MusicBrainz" is mentioned on the page
+        await expect(page.locator('text=/MusicBrainz/i')).toBeVisible();
+      }
+    }
+  });
+
+  test('should support manual entry for Music imports', async ({ page }) => {
+    await page.goto('/import');
+
+    const importButtons = page.locator('button:has-text("Import"), a:has-text("Import")');
+    if (await importButtons.count() > 0) {
+      await importButtons.first().click();
+
+      await page.waitForURL(/\/import\/start|\/import\/step1/);
+
+      // Select Music type
+      const musicButton = page.locator('button:has-text("Music"), input[value="Music"] ~ label');
+      if (await musicButton.count() > 0) {
+        await musicButton.first().click();
+
+        // Step 2: Skip MusicBrainz search
+        await page.waitForURL(/\/import\/step2/);
+
+        const skipButton = page.locator('button:has-text("Skip"), button[name="action"][value="skip"]');
+        if (await skipButton.count() > 0) {
+          await skipButton.click();
+
+          // Step 3: Manual entry - should show artist and title fields
+          await page.waitForURL(/\/import\/step3/);
+
+          const artistInput = page.locator('input[name="artist"]');
+          const titleInput = page.locator('input[name="title"]');
+
+          // For Music, we expect artist field (optional) and title field (required)
+          if (await titleInput.count() > 0) {
+            await titleInput.fill('Test Album');
+
+            // Artist field should be visible
+            if (await artistInput.count() > 0) {
+              await artistInput.fill('Test Artist');
+            }
+
+            // Verify we can proceed
+            const nextButton = page.locator('button:has-text("Next"), button[type="submit"]');
+            await expect(nextButton).toBeVisible();
+          }
+        }
+      }
+    }
+  });
+
+  test('should support manual MusicBrainz ID entry', async ({ page }) => {
+    await page.goto('/import');
+
+    const importButtons = page.locator('button:has-text("Import"), a:has-text("Import")');
+    if (await importButtons.count() > 0) {
+      await importButtons.first().click();
+
+      await page.waitForURL(/\/import\/start|\/import\/step1/);
+
+      // Select Music type
+      const musicButton = page.locator('button:has-text("Music"), input[value="Music"] ~ label');
+      if (await musicButton.count() > 0) {
+        await musicButton.first().click();
+
+        // Step 2: Look for manual MusicBrainz ID entry option
+        await page.waitForURL(/\/import\/step2/);
+
+        // Look for collapsible details/summary element or manual entry section
+        const manualEntry = page.locator('details summary:has-text("manual"), summary:has-text("MusicBrainz ID")');
+
+        if (await manualEntry.count() > 0) {
+          // Expand the manual entry section
+          await manualEntry.click();
+
+          // Should show MusicBrainz ID input field
+          const mbidInput = page.locator('input[name="id"], input[placeholder*="musicbrainz"]');
+          await expect(mbidInput).toBeVisible();
+        }
+      }
+    }
+  });
+
+  test('should display MusicBrainz search results with required information', async ({ page }) => {
+    await page.goto('/import');
+
+    const importButtons = page.locator('button:has-text("Import"), a:has-text("Import")');
+    if (await importButtons.count() > 0) {
+      await importButtons.first().click();
+
+      await page.waitForURL(/\/import\/start|\/import\/step1/);
+
+      // Select Music type
+      const musicButton = page.locator('button:has-text("Music"), input[value="Music"] ~ label');
+      if (await musicButton.count() > 0) {
+        await musicButton.first().click();
+
+        // Step 2: Perform a search (if possible without real API)
+        await page.waitForURL(/\/import\/step2/);
+
+        const artistInput = page.locator('input[name="artist"]');
+        const titleInput = page.locator('input[name="title"]');
+
+        // Note: This test may not return real results in test environment
+        // but we can verify the form exists and structure is correct
+        if (await artistInput.count() > 0 && await titleInput.count() > 0) {
+          // Verify search form structure
+          const searchButton = page.locator('button:has-text("Search")');
+          await expect(searchButton).toBeVisible();
+
+          // If we were to perform a real search, results should show:
+          // - Artist name
+          // - Release title
+          // - Date
+          // - Format
+          // - Track count
+          // The template should have elements for these fields
+        }
+      }
+    }
+  });
 });

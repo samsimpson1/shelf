@@ -396,3 +396,178 @@ func TestIntegrationCachingBehavior(t *testing.T) {
 
 	t.Log("Caching behavior verified - existing files not overwritten")
 }
+
+// TestIntegrationSearchReleases tests the SearchReleases functionality
+// Note: This test makes real API calls to MusicBrainz and requires internet access
+func TestIntegrationSearchReleases(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	checkMusicBrainzAccess(t)
+
+	client := NewMusicBrainzClient()
+
+	// Rate limit: MusicBrainz recommends 1 request per second
+	time.Sleep(1 * time.Second)
+
+	// Test searching by artist and title
+	results, err := client.SearchReleases("Pink Floyd", "Dark Side of the Moon")
+	if err != nil {
+		t.Fatalf("SearchReleases failed: %v", err)
+	}
+
+	if len(results) == 0 {
+		t.Fatal("Expected search results, got none")
+	}
+
+	// Verify results have required fields
+	foundMatch := false
+	for _, result := range results {
+		if result.ID == "" {
+			t.Error("Result missing ID")
+		}
+		if result.Title == "" {
+			t.Error("Result missing Title")
+		}
+
+		// Check if we found our expected release
+		if result.Title == "Dark Side of the Moon" || result.Title == "The Dark Side of the Moon" {
+			foundMatch = true
+
+			// Verify artist names
+			artist := result.GetArtistNames()
+			if artist == "" || artist == "Unknown Artist" {
+				t.Error("Result missing artist information")
+			}
+
+			// Verify helper methods work
+			trackCount := result.GetTrackCount()
+			if trackCount > 0 {
+				t.Logf("Track count: %d", trackCount)
+			}
+
+			format := result.GetFormat()
+			t.Logf("Format: %s", format)
+		}
+	}
+
+	if !foundMatch {
+		t.Log("Warning: Did not find expected 'Dark Side of the Moon' release in results")
+		t.Log("This may be due to MusicBrainz API changes or search algorithm updates")
+	}
+
+	t.Logf("Successfully searched MusicBrainz: %d results", len(results))
+	if len(results) > 0 {
+		t.Logf("First result: %s - %s", results[0].GetArtistNames(), results[0].Title)
+	}
+}
+
+// TestIntegrationSearchReleasesByArtistOnly tests searching by artist only
+// Note: This test makes real API calls to MusicBrainz and requires internet access
+func TestIntegrationSearchReleasesByArtistOnly(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	checkMusicBrainzAccess(t)
+
+	client := NewMusicBrainzClient()
+
+	// Rate limit: MusicBrainz recommends 1 request per second
+	time.Sleep(1 * time.Second)
+
+	// Test searching by artist only
+	results, err := client.SearchReleases("The Beatles", "")
+	if err != nil {
+		t.Fatalf("SearchReleases failed: %v", err)
+	}
+
+	if len(results) == 0 {
+		t.Fatal("Expected search results for The Beatles, got none")
+	}
+
+	// Verify at least some results have The Beatles as artist
+	foundBeatles := false
+	for _, result := range results {
+		artist := result.GetArtistNames()
+		if artist == "The Beatles" || artist == "Beatles" {
+			foundBeatles = true
+			break
+		}
+	}
+
+	if !foundBeatles {
+		t.Error("Expected to find The Beatles in artist search results")
+	}
+
+	t.Logf("Successfully searched by artist only: %d results", len(results))
+}
+
+// TestIntegrationSearchReleasesByTitleOnly tests searching by title only
+// Note: This test makes real API calls to MusicBrainz and requires internet access
+func TestIntegrationSearchReleasesByTitleOnly(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	checkMusicBrainzAccess(t)
+
+	client := NewMusicBrainzClient()
+
+	// Rate limit: MusicBrainz recommends 1 request per second
+	time.Sleep(1 * time.Second)
+
+	// Test searching by title only
+	results, err := client.SearchReleases("", "Abbey Road")
+	if err != nil {
+		t.Fatalf("SearchReleases failed: %v", err)
+	}
+
+	if len(results) == 0 {
+		t.Fatal("Expected search results for Abbey Road, got none")
+	}
+
+	// Verify at least some results have Abbey Road in the title
+	foundMatch := false
+	for _, result := range results {
+		if result.Title == "Abbey Road" {
+			foundMatch = true
+			break
+		}
+	}
+
+	if !foundMatch {
+		t.Error("Expected to find 'Abbey Road' in title search results")
+	}
+
+	t.Logf("Successfully searched by title only: %d results", len(results))
+}
+
+// TestIntegrationSearchReleasesResultLimit tests the 20 result limit
+// Note: This test makes real API calls to MusicBrainz and requires internet access
+func TestIntegrationSearchReleasesResultLimit(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	checkMusicBrainzAccess(t)
+
+	client := NewMusicBrainzClient()
+
+	// Rate limit: MusicBrainz recommends 1 request per second
+	time.Sleep(1 * time.Second)
+
+	// Search for a common term that should return many results
+	results, err := client.SearchReleases("Beatles", "")
+	if err != nil {
+		t.Fatalf("SearchReleases failed: %v", err)
+	}
+
+	// Should return at most 20 results (our limit)
+	if len(results) > 20 {
+		t.Errorf("Expected at most 20 results, got %d", len(results))
+	}
+
+	t.Logf("Search returned %d results (max 20)", len(results))
+}
