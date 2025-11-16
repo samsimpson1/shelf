@@ -1,10 +1,10 @@
 ---
 id: task-020.01
 title: Read musicbrainz.txt file and link to MusicBrainz release
-status: In Progress
+status: Done
 assignee: []
 created_date: '2025-11-12 13:28'
-updated_date: '2025-11-16 14:52'
+updated_date: '2025-11-16 14:53'
 labels:
   - musicbrainz
   - music
