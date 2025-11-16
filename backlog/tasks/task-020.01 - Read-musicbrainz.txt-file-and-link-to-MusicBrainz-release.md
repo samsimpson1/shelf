@@ -4,7 +4,7 @@ title: Read musicbrainz.txt file and link to MusicBrainz release
 status: In Progress
 assignee: []
 created_date: '2025-11-12 13:28'
-updated_date: '2025-11-16 14:48'
+updated_date: '2025-11-16 14:52'
 labels:
   - musicbrainz
   - music
@@ -26,11 +26,11 @@ Similar to how `tmdb.txt` works for Films/TV, this provides a simple way to asso
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Scanner reads musicbrainz.txt file from Music media directories
-- [ ] #2 Media struct stores MusicBrainz release ID
-- [ ] #3 Detail page displays MusicBrainz ID in metadata section
-- [ ] #4 MusicBrainz ID links to musicbrainz.org release page (format: https://musicbrainz.org/release/{id})
-- [ ] #5 MusicBrainz link only appears for Music media type
-- [ ] #6 Invalid or missing musicbrainz.txt is handled gracefully
-- [ ] #7 Tests cover reading musicbrainz.txt and ID storage
+- [x] #1 Scanner reads musicbrainz.txt file from Music media directories
+- [x] #2 Media struct stores MusicBrainz release ID
+- [x] #3 Detail page displays MusicBrainz ID in metadata section
+- [x] #4 MusicBrainz ID links to musicbrainz.org release page (format: https://musicbrainz.org/release/{id})
+- [x] #5 MusicBrainz link only appears for Music media type
+- [x] #6 Invalid or missing musicbrainz.txt is handled gracefully
+- [x] #7 Tests cover reading musicbrainz.txt and ID storage
 <!-- AC:END -->
