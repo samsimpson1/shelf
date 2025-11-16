@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -94,7 +97,8 @@ func TestIndexHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app := NewApp(tt.mediaList, tmpl, "/test/media", "")
+			scanner := NewScanner("/test/media")
+			app := NewApp(tt.mediaList, scanner, tmpl, "/test/media", "")
 
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
 			w := httptest.NewRecorder()
@@ -129,7 +133,8 @@ func TestIndexHandlerSorting(t *testing.T) {
 		{Title: "Gamma Film", Type: Film, Year: 2021, DiskCount: 1, Path: "/test/g"},
 	}
 
-	app := NewApp(mediaList, tmpl, "/test/media", "")
+	scanner := NewScanner("/test/media")
+	app := NewApp(mediaList, scanner, tmpl, "/test/media", "")
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
@@ -151,8 +156,9 @@ func TestNewApp(t *testing.T) {
 		{Title: "Test", Type: Film, Year: 2020, DiskCount: 1, Path: "/test"},
 	}
 	tmpl := template.Must(template.New("test").Parse("test"))
+	scanner := NewScanner("/test/media")
 
-	app := NewApp(mediaList, tmpl, "/test/media", "")
+	app := NewApp(mediaList, scanner, tmpl, "/test/media", "")
 
 	if app == nil {
 		t.Fatal("NewApp() returned nil")
@@ -162,6 +168,9 @@ func TestNewApp(t *testing.T) {
 	}
 	if app.templates == nil {
 		t.Error("NewApp() templates is nil")
+	}
+	if app.scanner == nil {
+		t.Error("NewApp() scanner is nil")
 	}
 }
 
@@ -291,7 +300,8 @@ func TestDetailHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app := NewApp(tt.mediaList, tmpl, "/test/media", "")
+			scanner := NewScanner("/test/media")
+			app := NewApp(tt.mediaList, scanner, tmpl, "/test/media", "")
 
 			req := httptest.NewRequest(http.MethodGet, tt.requestPath, nil)
 			w := httptest.NewRecorder()
@@ -329,7 +339,8 @@ func TestFindMediaBySlug(t *testing.T) {
 	}
 
 	tmpl := template.Must(template.New("test").Parse("test"))
-	app := NewApp(mediaList, tmpl, "/test/media", "")
+	scanner := NewScanner("/test/media")
+	app := NewApp(mediaList, scanner, tmpl, "/test/media", "")
 
 	tests := []struct {
 		name      string
@@ -372,5 +383,148 @@ func TestFindMediaBySlug(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestRefreshMediaList(t *testing.T) {
+	// Create a temporary test directory
+	testDir := t.TempDir()
+
+	// Set up test data with one film
+	setupTestMediaDir(t, testDir, []string{
+		"The Matrix (1999) [Film]/Disk [Blu-Ray]",
+	})
+
+	// Create scanner and initial app
+	scanner := NewScanner(testDir)
+	mediaList, err := scanner.Scan()
+	if err != nil {
+		t.Fatalf("Initial scan failed: %v", err)
+	}
+
+	tmpl := template.Must(template.New("test").Parse("test"))
+	app := NewApp(mediaList, scanner, tmpl, testDir, "")
+
+	// Verify initial state
+	if len(app.mediaList) != 1 {
+		t.Fatalf("Initial media list length = %d, want 1", len(app.mediaList))
+	}
+	if app.mediaList[0].Title != "The Matrix" {
+		t.Errorf("Initial media title = %q, want %q", app.mediaList[0].Title, "The Matrix")
+	}
+
+	// Add a new media item to the directory
+	setupTestMediaDir(t, testDir, []string{
+		"Fight Club (1999) [Film]/Disk [DVD]",
+	})
+
+	// Refresh the media list
+	err = app.RefreshMediaList()
+	if err != nil {
+		t.Fatalf("RefreshMediaList() failed: %v", err)
+	}
+
+	// Verify the list was refreshed
+	app.mediaListMutex.RLock()
+	mediaCount := len(app.mediaList)
+	app.mediaListMutex.RUnlock()
+
+	if mediaCount != 2 {
+		t.Errorf("After refresh, media list length = %d, want 2", mediaCount)
+	}
+
+	// Verify both media items are present
+	titles := make(map[string]bool)
+	app.mediaListMutex.RLock()
+	for _, media := range app.mediaList {
+		titles[media.Title] = true
+	}
+	app.mediaListMutex.RUnlock()
+
+	if !titles["The Matrix"] {
+		t.Error("The Matrix not found after refresh")
+	}
+	if !titles["Fight Club"] {
+		t.Error("Fight Club not found after refresh")
+	}
+}
+
+func TestRefreshMediaListThreadSafety(t *testing.T) {
+	// Create a temporary test directory
+	testDir := t.TempDir()
+
+	// Set up test data
+	setupTestMediaDir(t, testDir, []string{
+		"The Matrix (1999) [Film]/Disk [Blu-Ray]",
+		"Fight Club (1999) [Film]/Disk [DVD]",
+	})
+
+	// Create scanner and app
+	scanner := NewScanner(testDir)
+	mediaList, err := scanner.Scan()
+	if err != nil {
+		t.Fatalf("Initial scan failed: %v", err)
+	}
+
+	tmpl := template.Must(template.New("test").Parse("test"))
+	app := NewApp(mediaList, scanner, tmpl, testDir, "")
+
+	// Run concurrent operations to test thread safety
+	done := make(chan bool)
+	errors := make(chan error, 3)
+
+	// Goroutine 1: Repeatedly refresh media list
+	go func() {
+		for i := 0; i < 10; i++ {
+			if err := app.RefreshMediaList(); err != nil {
+				errors <- err
+				return
+			}
+		}
+		done <- true
+	}()
+
+	// Goroutine 2: Repeatedly read media list via findMediaBySlug
+	go func() {
+		for i := 0; i < 100; i++ {
+			_ = app.findMediaBySlug("the-matrix-1999")
+		}
+		done <- true
+	}()
+
+	// Goroutine 3: Repeatedly iterate over media list
+	go func() {
+		for i := 0; i < 100; i++ {
+			app.mediaListMutex.RLock()
+			count := len(app.mediaList)
+			app.mediaListMutex.RUnlock()
+			if count < 0 {
+				errors <- fmt.Errorf("invalid media count: %d", count)
+				return
+			}
+		}
+		done <- true
+	}()
+
+	// Wait for all goroutines to complete
+	for i := 0; i < 3; i++ {
+		select {
+		case <-done:
+			// Success
+		case err := <-errors:
+			t.Fatalf("Concurrent operation failed: %v", err)
+		}
+	}
+}
+
+// Helper function to set up test media directories
+func setupTestMediaDir(t *testing.T, baseDir string, paths []string) {
+	t.Helper()
+	for _, path := range paths {
+		fullPath := filepath.Join(baseDir, path)
+		err := os.MkdirAll(fullPath, 0755)
+		if err != nil {
+			t.Fatalf("Failed to create test directory %s: %v", fullPath, err)
+		}
 	}
 }

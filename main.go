@@ -168,7 +168,7 @@ func main() {
 	}
 
 	// Create app
-	app := NewApp(mediaList, tmpl, mediaDir, importDir)
+	app := NewApp(mediaList, scanner, tmpl, mediaDir, importDir)
 	app.SetDevMode(devMode)
 	app.SetPlayURLPrefix(playURLPrefix)
 
