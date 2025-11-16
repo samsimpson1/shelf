@@ -13,6 +13,7 @@ import (
 //   - War of the Worlds (2025) [Film] - 1 disk, TMDB ID 755898, title.txt "War of the Worlds"
 //   - Better Call Saul [TV] - 2 disks (Series 1), TMDB ID 60059, title.txt "Better Call Saul"
 //   - No TMDB (2021) [Film] - 1 disk, no TMDB ID, no title.txt (tests fallback)
+//   - Pink Floyd - The Wall [Music] - 1 disk, MusicBrainz ID f9f5eb32-2d59-4f6f-9308-6388b69979d6
 //
 // The directory is automatically cleaned up when the test completes via t.TempDir().
 func setupTestData(t *testing.T) string {
@@ -68,6 +69,20 @@ func setupTestData(t *testing.T) string {
 	noTMDBDiskDir := filepath.Join(noTMDBDir, "Disk [DVD]")
 	if err := os.Mkdir(noTMDBDiskDir, 0755); err != nil {
 		t.Fatalf("Failed to create no TMDB disk directory: %v", err)
+	}
+
+	// Create Pink Floyd - The Wall [Music]
+	musicDir := filepath.Join(tmpDir, "Pink Floyd - The Wall [Music]")
+	if err := os.Mkdir(musicDir, 0755); err != nil {
+		t.Fatalf("Failed to create music directory: %v", err)
+	}
+	musicDiskDir := filepath.Join(musicDir, "Disk [Blu-Ray]")
+	if err := os.Mkdir(musicDiskDir, 0755); err != nil {
+		t.Fatalf("Failed to create music disk directory: %v", err)
+	}
+	musicMBID := filepath.Join(musicDir, "musicbrainz.txt")
+	if err := os.WriteFile(musicMBID, []byte("f9f5eb32-2d59-4f6f-9308-6388b69979d6"), 0644); err != nil {
+		t.Fatalf("Failed to create music musicbrainz.txt: %v", err)
 	}
 
 	return tmpDir

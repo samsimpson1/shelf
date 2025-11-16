@@ -190,6 +190,9 @@ func (s *Scanner) parseMusic(dirName, dirPath string) (Media, bool) {
 	media.Disks = s.collectFilmDisks(dirPath)
 	media.DiskCount = len(media.Disks)
 
+	// Read MusicBrainz ID if present
+	media.MusicBrainzID = s.readMusicBrainzID(dirPath)
+
 	// Read title from title.txt if present (local metadata only, no TMDB)
 	if officialTitle := s.readTitle(dirPath); officialTitle != "" {
 		media.Title = officialTitle
@@ -434,6 +437,19 @@ func (s *Scanner) readTitle(dirPath string) string {
 	titlePath := filepath.Join(dirPath, "title.txt")
 
 	data, err := os.ReadFile(titlePath)
+	if err != nil {
+		return "" // File doesn't exist or can't be read
+	}
+
+	// Trim whitespace and return
+	return strings.TrimSpace(string(data))
+}
+
+// readMusicBrainzID reads the MusicBrainz release ID from musicbrainz.txt file if it exists
+func (s *Scanner) readMusicBrainzID(dirPath string) string {
+	mbPath := filepath.Join(dirPath, "musicbrainz.txt")
+
+	data, err := os.ReadFile(mbPath)
 	if err != nil {
 		return "" // File doesn't exist or can't be read
 	}
