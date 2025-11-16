@@ -11,8 +11,9 @@ import (
 
 const (
 	musicBrainzAPIBaseURL = "https://musicbrainz.org/ws/2"
-	// MusicBrainz requires a User-Agent header
-	musicBrainzUserAgent = "MediaBackupManager/1.0 (https://github.com/yourusername/shelf)"
+	// MusicBrainz requires a User-Agent header with app name, version, and contact
+	// Format: AppName/Version ( contact-url )
+	musicBrainzUserAgent = "Shelf-MediaBackupManager/1.0 ( https://github.com/samsimpson1/shelf )"
 )
 
 // MusicBrainzClient handles interactions with the MusicBrainz API
