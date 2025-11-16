@@ -1,9 +1,10 @@
 ---
 id: task-020.02
 title: Fetch cover art from MusicBrainz
-status: To Do
+status: Done
 assignee: []
 created_date: '2025-11-12 13:28'
+updated_date: '2025-11-16 15:44'
 labels:
   - musicbrainz
   - music
@@ -26,11 +27,11 @@ The Cover Art Archive (coverartarchive.org) is MusicBrainz's official source for
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 MusicBrainz client can fetch cover art from Cover Art Archive API
-- [ ] #2 Cover art is downloaded during initial scan when musicbrainz.txt exists
-- [ ] #3 Cover art saved as poster.jpg/png/webp in media directory
-- [ ] #4 Existing poster files are not overwritten (caching behavior)
-- [ ] #5 Failed cover art fetches log warnings but don't stop scanning
-- [ ] #6 Cover art display works in both grid and detail views
-- [ ] #7 Tests cover cover art fetching and file saving
+- [x] #1 MusicBrainz client can fetch cover art from Cover Art Archive API
+- [x] #2 Cover art is downloaded during initial scan when musicbrainz.txt exists
+- [x] #3 Cover art saved as poster.jpg/png/webp in media directory
+- [x] #4 Existing poster files are not overwritten (caching behavior)
+- [x] #5 Failed cover art fetches log warnings but don't stop scanning
+- [x] #6 Cover art display works in both grid and detail views
+- [x] #7 Tests cover cover art fetching and file saving
 <!-- AC:END -->
