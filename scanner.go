@@ -13,9 +13,10 @@ import (
 
 var (
 	// Regex patterns for parsing directory names
-	filmPattern = regexp.MustCompile(`^(.+) \((\d{4})\) \[Film\]$`)
-	tvPattern   = regexp.MustCompile(`^(.+) \[TV\]$`)
-	diskPattern = regexp.MustCompile(`^Disk \[.+\]$`)
+	filmPattern   = regexp.MustCompile(`^(.+) \((\d{4})\) \[Film\]$`)
+	tvPattern     = regexp.MustCompile(`^(.+) \[TV\]$`)
+	musicPattern  = regexp.MustCompile(`^(.+) \[Music\]$`)
+	diskPattern   = regexp.MustCompile(`^Disk \[.+\]$`)
 	tvDiskPattern = regexp.MustCompile(`^Series (\d+) Disk (\d+) \[.+\]$`)
 )
 
@@ -80,7 +81,13 @@ func (s *Scanner) Scan() ([]Media, error) {
 			continue
 		}
 
-		// If neither pattern matches, skip this directory
+		// Try to parse as Music
+		if media, ok := s.parseMusic(dirName, dirPath); ok {
+			mediaList = append(mediaList, media)
+			continue
+		}
+
+		// If no pattern matches, skip this directory
 	}
 
 	return mediaList, nil
@@ -159,6 +166,36 @@ func (s *Scanner) parseTV(dirName, dirPath string) (Media, bool) {
 			log.Printf("Warning: Failed to fetch metadata for %s: %v", media.Title, err)
 		}
 	}
+
+	return media, true
+}
+
+// parseMusic attempts to parse a directory as Music
+func (s *Scanner) parseMusic(dirName, dirPath string) (Media, bool) {
+	matches := musicPattern.FindStringSubmatch(dirName)
+	if matches == nil {
+		return Media{}, false
+	}
+
+	title := matches[1]
+
+	media := Media{
+		Title: title,
+		Type:  Music,
+		Year:  0, // Music doesn't have years in directory names
+		Path:  dirPath,
+	}
+
+	// Collect disk details (Music uses the same disk pattern as Film)
+	media.Disks = s.collectFilmDisks(dirPath)
+	media.DiskCount = len(media.Disks)
+
+	// Read title from title.txt if present (local metadata only, no TMDB)
+	if officialTitle := s.readTitle(dirPath); officialTitle != "" {
+		media.Title = officialTitle
+	}
+
+	// Note: Music does NOT integrate with TMDB - all metadata is local only
 
 	return media, true
 }

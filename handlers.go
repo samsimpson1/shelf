@@ -116,11 +116,11 @@ func (app *App) IndexHandler(w http.ResponseWriter, r *http.Request) {
 	copy(sorted, app.mediaList)
 	app.mediaListMutex.RUnlock()
 
-	// Sort media list: Films first, then TV shows, alphabetically within each type
+	// Sort media list: Films first, then TV shows, then Music, alphabetically within each type
 	sort.Slice(sorted, func(i, j int) bool {
-		// Films come before TV shows
+		// Sort by type first: Film < TV < Music
 		if sorted[i].Type != sorted[j].Type {
-			return sorted[i].Type == Film
+			return sorted[i].Type < sorted[j].Type
 		}
 		// Within same type, sort alphabetically by title
 		return sorted[i].Title < sorted[j].Title
@@ -274,6 +274,12 @@ func (app *App) SearchTMDBHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Music does not support TMDB integration
+	if media.Type == Music {
+		http.Error(w, "TMDB search is not supported for Music media type", http.StatusBadRequest)
+		return
+	}
+
 	// Get query parameters
 	query := r.URL.Query().Get("query")
 	yearStr := r.URL.Query().Get("year")
@@ -374,6 +380,12 @@ func (app *App) ConfirmTMDBHandler(w http.ResponseWriter, r *http.Request) {
 	media := app.findMediaBySlug(slug)
 	if media == nil {
 		http.NotFound(w, r)
+		return
+	}
+
+	// Music does not support TMDB integration
+	if media.Type == Music {
+		http.Error(w, "TMDB confirmation is not supported for Music media type", http.StatusBadRequest)
 		return
 	}
 
@@ -484,6 +496,12 @@ func (app *App) SaveTMDBHandler(w http.ResponseWriter, r *http.Request) {
 	media := app.findMediaBySlug(slug)
 	if media == nil {
 		http.NotFound(w, r)
+		return
+	}
+
+	// Music does not support TMDB integration
+	if media.Type == Music {
+		http.Error(w, "Setting TMDB ID is not supported for Music media type", http.StatusBadRequest)
 		return
 	}
 

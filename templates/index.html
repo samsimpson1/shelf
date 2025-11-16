@@ -33,11 +33,11 @@
             <img src="{{.PosterURL}}" alt="{{.DisplayTitle}}"
                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
             <div class="placeholder" style="display: none;">
-                {{if eq .Type 0}}🎬{{else}}📺{{end}}
+                {{if eq .Type 0}}🎬{{else if eq .Type 1}}📺{{else}}🎵{{end}}
             </div>
             {{else}}
             <div class="placeholder">
-                {{if eq .Type 0}}🎬{{else}}📺{{end}}
+                {{if eq .Type 0}}🎬{{else if eq .Type 1}}📺{{else}}🎵{{end}}
             </div>
             {{end}}
             <div class="title">{{.DisplayTitle}}</div>
