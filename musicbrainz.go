@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 )
@@ -55,7 +56,122 @@ type MBMedium struct {
 type MBRelease struct {
 	ID    string     `json:"id"`
 	Title string     `json:"title"`
+	Date  string     `json:"date"`  // Release date (YYYY-MM-DD)
 	Media []MBMedium `json:"media"`
+}
+
+// MBArtistCredit represents an artist credit from MusicBrainz API
+type MBArtistCredit struct {
+	Name   string   `json:"name"`
+	Artist MBArtist `json:"artist"`
+}
+
+// MBArtist represents an artist from MusicBrainz API
+type MBArtist struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// MBReleaseSearchResult represents a single release in search results
+type MBReleaseSearchResult struct {
+	ID            string             `json:"id"`
+	Title         string             `json:"title"`
+	Date          string             `json:"date"`  // Release date
+	Status        string             `json:"status"` // Official, Promotion, etc.
+	Country       string             `json:"country"`
+	ArtistCredit  []MBArtistCredit   `json:"artist-credit"`
+	ReleaseGroup  MBReleaseGroup     `json:"release-group"`
+	Media         []MBMedium         `json:"media"`
+}
+
+// MBReleaseGroup represents a release group from MusicBrainz API
+type MBReleaseGroup struct {
+	ID           string `json:"id"`
+	Title        string `json:"title"`
+	PrimaryType  string `json:"primary-type"`  // Album, Single, EP, etc.
+}
+
+// MBReleaseSearchResponse represents the response from release search
+type MBReleaseSearchResponse struct {
+	Created  string                  `json:"created"`
+	Count    int                     `json:"count"`
+	Offset   int                     `json:"offset"`
+	Releases []MBReleaseSearchResult `json:"releases"`
+}
+
+// GetArtistNames returns a comma-separated list of artist names
+func (r *MBReleaseSearchResult) GetArtistNames() string {
+	if len(r.ArtistCredit) == 0 {
+		return "Unknown Artist"
+	}
+
+	var names []string
+	for _, credit := range r.ArtistCredit {
+		if credit.Name != "" {
+			names = append(names, credit.Name)
+		}
+	}
+
+	if len(names) == 0 {
+		return "Unknown Artist"
+	}
+
+	return formatArtistNames(names)
+}
+
+// formatArtistNames formats a list of artist names with proper separators
+func formatArtistNames(names []string) string {
+	if len(names) == 0 {
+		return ""
+	}
+	if len(names) == 1 {
+		return names[0]
+	}
+	if len(names) == 2 {
+		return names[0] + " & " + names[1]
+	}
+	// For 3+ artists, use commas and & for the last one
+	result := ""
+	for i, name := range names {
+		if i == len(names)-1 {
+			result += " & " + name
+		} else if i > 0 {
+			result += ", " + name
+		} else {
+			result += name
+		}
+	}
+	return result
+}
+
+// GetTrackCount returns the total number of tracks across all media
+func (r *MBReleaseSearchResult) GetTrackCount() int {
+	total := 0
+	for _, medium := range r.Media {
+		total += len(medium.Tracks)
+	}
+	return total
+}
+
+// GetFormat returns the format of the first medium, or "Various" if multiple formats
+func (r *MBReleaseSearchResult) GetFormat() string {
+	if len(r.Media) == 0 {
+		return "Unknown"
+	}
+
+	firstFormat := r.Media[0].Format
+	if firstFormat == "" {
+		return "Unknown"
+	}
+
+	// Check if all media have the same format
+	for _, medium := range r.Media {
+		if medium.Format != firstFormat {
+			return "Various"
+		}
+	}
+
+	return firstFormat
 }
 
 // FetchRelease fetches release information including track list from MusicBrainz
@@ -191,4 +307,65 @@ func (c *MusicBrainzClient) FetchAndSaveTrackList(media *Media) error {
 	}
 
 	return nil
+}
+
+// SearchReleases searches for releases on MusicBrainz by artist and/or title
+// Returns up to 20 results, sorted by relevance
+func (c *MusicBrainzClient) SearchReleases(artist, title string) ([]MBReleaseSearchResult, error) {
+	if artist == "" && title == "" {
+		return nil, fmt.Errorf("at least one of artist or title must be provided")
+	}
+
+	// Build search query using Lucene syntax
+	// MusicBrainz search API: https://musicbrainz.org/doc/MusicBrainz_API/Search
+	queryParts := []string{}
+	if artist != "" {
+		queryParts = append(queryParts, fmt.Sprintf("artist:%q", artist))
+	}
+	if title != "" {
+		queryParts = append(queryParts, fmt.Sprintf("release:%q", title))
+	}
+
+	query := ""
+	if len(queryParts) > 0 {
+		query = queryParts[0]
+		for i := 1; i < len(queryParts); i++ {
+			query += " AND " + queryParts[i]
+		}
+	}
+
+	// Build URL with search query, limit to 20 results, and include media/artist-credits
+	url := fmt.Sprintf("%s/release?query=%s&limit=20&inc=media+artist-credits+release-groups&fmt=json",
+		musicBrainzAPIBaseURL,
+		escapeQueryString(query))
+
+	// Create request with required User-Agent header
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("User-Agent", musicBrainzUserAgent)
+
+	// Execute request
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search releases: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("MusicBrainz API returned status %d", resp.StatusCode)
+	}
+
+	var searchResp MBReleaseSearchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&searchResp); err != nil {
+		return nil, fmt.Errorf("failed to decode search response: %w", err)
+	}
+
+	return searchResp.Releases, nil
+}
+
+// escapeQueryString properly escapes a query string for URL encoding
+func escapeQueryString(query string) string {
+	return url.QueryEscape(query)
 }

@@ -449,3 +449,264 @@ func TestExecuteImportDuplicateDest(t *testing.T) {
 		t.Error("Expected error when destination already exists, got nil")
 	}
 }
+
+// TestExecuteImportNewMusic tests importing a new music album
+func TestExecuteImportNewMusic(t *testing.T) {
+	// Create temporary directories
+	tmpDir := t.TempDir()
+	importDir := filepath.Join(tmpDir, "import")
+	mediaDir := filepath.Join(tmpDir, "media")
+	sourceDir := filepath.Join(importDir, "music-source")
+
+	// Create source directory
+	if err := os.MkdirAll(sourceDir, 0755); err != nil {
+		t.Fatalf("Failed to create source directory: %v", err)
+	}
+
+	// Create import session for Music
+	session := &ImportSession{
+		SourceDir: &ImportDirectory{
+			Name: "music-source",
+			Path: sourceDir,
+		},
+		MediaKind:  Music,
+		Title:      "Abbey Road",
+		MBArtist:   "The Beatles",
+		DiskType:   DiskTypeBluRay,
+		DiskNum:    1,
+		AddToExisting: false,
+	}
+
+	// Execute import
+	err := ExecuteImport(session, mediaDir)
+	if err != nil {
+		t.Fatalf("ExecuteImport() failed: %v", err)
+	}
+
+	// Verify destination was created correctly
+	expectedDest := filepath.Join(mediaDir, "Abbey Road [Music]", "Disk [Blu-Ray]")
+	if _, err := os.Stat(expectedDest); os.IsNotExist(err) {
+		t.Errorf("Destination directory not created: %s", expectedDest)
+	}
+
+	// Verify source directory was moved
+	if _, err := os.Stat(sourceDir); !os.IsNotExist(err) {
+		t.Error("Source directory still exists after import")
+	}
+}
+
+// TestExecuteImportWithMusicBrainz tests importing with MusicBrainz ID
+func TestExecuteImportWithMusicBrainz(t *testing.T) {
+	// Create temporary directories
+	tmpDir := t.TempDir()
+	importDir := filepath.Join(tmpDir, "import")
+	mediaDir := filepath.Join(tmpDir, "media")
+	sourceDir := filepath.Join(importDir, "music-source")
+
+	// Create source directory
+	if err := os.MkdirAll(sourceDir, 0755); err != nil {
+		t.Fatalf("Failed to create source directory: %v", err)
+	}
+
+	// Create import session with MusicBrainz ID
+	session := &ImportSession{
+		SourceDir: &ImportDirectory{
+			Name: "music-source",
+			Path: sourceDir,
+		},
+		MediaKind:     Music,
+		Title:         "Dark Side of the Moon",
+		MBArtist:      "Pink Floyd",
+		MusicBrainzID: "c9f8c5ee-8d1f-4a8f-9b0a-2b7b4f5e1234",
+		MBTitle:       "The Dark Side of the Moon",
+		DiskType:      DiskTypeBluRay,
+		DiskNum:       1,
+		AddToExisting: false,
+	}
+
+	// Execute import
+	err := ExecuteImport(session, mediaDir)
+	if err != nil {
+		t.Fatalf("ExecuteImport() failed: %v", err)
+	}
+
+	// Verify musicbrainz.txt was created
+	// The directory name should use MBTitle if available, otherwise Title
+	expectedMediaDir := "The Dark Side of the Moon [Music]"
+	mbFile := filepath.Join(mediaDir, expectedMediaDir, "musicbrainz.txt")
+
+	if _, err := os.Stat(mbFile); os.IsNotExist(err) {
+		t.Errorf("musicbrainz.txt file was not created at %s", mbFile)
+	} else {
+		// Verify content
+		content, err := os.ReadFile(mbFile)
+		if err != nil {
+			t.Errorf("Failed to read musicbrainz.txt: %v", err)
+		}
+		expectedID := "c9f8c5ee-8d1f-4a8f-9b0a-2b7b4f5e1234"
+		if strings.TrimSpace(string(content)) != expectedID {
+			t.Errorf("musicbrainz.txt content = %q, want %q", string(content), expectedID)
+		}
+	}
+}
+
+// TestMusicBrainzSearchReleases tests the SearchReleases function
+func TestMusicBrainzSearchReleases(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping MusicBrainz API test in short mode")
+	}
+
+	client := NewMusicBrainzClient()
+
+	// Test searching by artist and title
+	results, err := client.SearchReleases("The Beatles", "Abbey Road")
+	if err != nil {
+		t.Fatalf("SearchReleases() failed: %v", err)
+	}
+
+	if len(results) == 0 {
+		t.Error("Expected search results, got none")
+	}
+
+	// Verify first result has required fields
+	if len(results) > 0 {
+		result := results[0]
+		if result.ID == "" {
+			t.Error("Result missing ID")
+		}
+		if result.Title == "" {
+			t.Error("Result missing Title")
+		}
+		artist := result.GetArtistNames()
+		if artist == "" || artist == "Unknown Artist" {
+			t.Error("Result missing artist information")
+		}
+	}
+}
+
+// TestMusicBrainzGetArtistNames tests the GetArtistNames helper function
+func TestMusicBrainzGetArtistNames(t *testing.T) {
+	tests := []struct {
+		name     string
+		result   MBReleaseSearchResult
+		expected string
+	}{
+		{
+			name: "Single artist",
+			result: MBReleaseSearchResult{
+				ArtistCredit: []MBArtistCredit{
+					{Name: "The Beatles"},
+				},
+			},
+			expected: "The Beatles",
+		},
+		{
+			name: "Two artists",
+			result: MBReleaseSearchResult{
+				ArtistCredit: []MBArtistCredit{
+					{Name: "Simon"},
+					{Name: "Garfunkel"},
+				},
+			},
+			expected: "Simon & Garfunkel",
+		},
+		{
+			name: "Three artists",
+			result: MBReleaseSearchResult{
+				ArtistCredit: []MBArtistCredit{
+					{Name: "Crosby"},
+					{Name: "Stills"},
+					{Name: "Nash"},
+				},
+			},
+			expected: "Crosby, Stills & Nash",
+		},
+		{
+			name: "No artists",
+			result: MBReleaseSearchResult{
+				ArtistCredit: []MBArtistCredit{},
+			},
+			expected: "Unknown Artist",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.result.GetArtistNames()
+			if got != tt.expected {
+				t.Errorf("GetArtistNames() = %q, want %q", got, tt.expected)
+			}
+		})
+	}
+}
+
+// TestMusicBrainzGetTrackCount tests the GetTrackCount helper function
+func TestMusicBrainzGetTrackCount(t *testing.T) {
+	result := MBReleaseSearchResult{
+		Media: []MBMedium{
+			{Tracks: []MBTrack{{}, {}, {}}}, // 3 tracks
+			{Tracks: []MBTrack{{}, {}}},     // 2 tracks
+		},
+	}
+
+	got := result.GetTrackCount()
+	want := 5
+	if got != want {
+		t.Errorf("GetTrackCount() = %d, want %d", got, want)
+	}
+}
+
+// TestMusicBrainzGetFormat tests the GetFormat helper function
+func TestMusicBrainzGetFormat(t *testing.T) {
+	tests := []struct {
+		name     string
+		result   MBReleaseSearchResult
+		expected string
+	}{
+		{
+			name: "Single format",
+			result: MBReleaseSearchResult{
+				Media: []MBMedium{
+					{Format: "CD"},
+					{Format: "CD"},
+				},
+			},
+			expected: "CD",
+		},
+		{
+			name: "Multiple formats",
+			result: MBReleaseSearchResult{
+				Media: []MBMedium{
+					{Format: "CD"},
+					{Format: "Vinyl"},
+				},
+			},
+			expected: "Various",
+		},
+		{
+			name: "No media",
+			result: MBReleaseSearchResult{
+				Media: []MBMedium{},
+			},
+			expected: "Unknown",
+		},
+		{
+			name: "Empty format",
+			result: MBReleaseSearchResult{
+				Media: []MBMedium{
+					{Format: ""},
+				},
+			},
+			expected: "Unknown",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.result.GetFormat()
+			if got != tt.expected {
+				t.Errorf("GetFormat() = %q, want %q", got, tt.expected)
+			}
+		})
+	}
+}

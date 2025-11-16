@@ -163,6 +163,7 @@ func main() {
 		"templates/import_list.html",
 		"templates/import_step1.html",
 		"templates/import_step2.html",
+		"templates/import_step2_musicbrainz.html",
 		"templates/import_step3.html",
 		"templates/import_step4.html",
 		"templates/import_step5.html",
@@ -183,6 +184,9 @@ func main() {
 		app.SetTMDBClient(tmdbClient)
 	}
 
+	// Set MusicBrainz client (always available)
+	app.SetMusicBrainzClient(musicBrainzClient)
+
 	// Setup HTTP routes
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", app.IndexHandler)
@@ -194,6 +198,7 @@ func main() {
 	mux.HandleFunc("/import/step1", app.ImportStep1Handler)
 	mux.HandleFunc("/import/step2", app.ImportStep2Handler)
 	mux.HandleFunc("/import/step2/confirm", app.ImportStep2ConfirmHandler)
+	mux.HandleFunc("/import/step2/confirm-musicbrainz", app.ImportStep2ConfirmMusicBrainzHandler)
 	mux.HandleFunc("/import/step3", app.ImportStep3Handler)
 	mux.HandleFunc("/import/step4", app.ImportStep4Handler)
 	mux.HandleFunc("/import/step5", app.ImportStep5Handler)

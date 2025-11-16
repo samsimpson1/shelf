@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Step 2 - Shelf</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: sans-serif; padding: 20px; max-width: 900px; margin: 0 auto; }
+        h1 { margin-bottom: 10px; }
+        .breadcrumb { margin-bottom: 20px; color: #666; }
+        .breadcrumb a { color: #0066cc; text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .progress { margin-bottom: 30px; }
+        .progress-bar { display: flex; gap: 10px; }
+        .step { flex: 1; height: 4px; background: #eee; border-radius: 2px; }
+        .step.active { background: #0066cc; }
+        .search-box { background: #f5f5f5; padding: 20px; border-radius: 4px; margin-bottom: 20px; }
+        .search-form { display: flex; gap: 10px; margin-bottom: 15px; }
+        .search-form input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        .btn { background: #0066cc; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn:hover { background: #0052a3; }
+        .btn-secondary { background: #666; }
+        .btn-secondary:hover { background: #555; }
+        .results { margin-top: 20px; }
+        .result { border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin-bottom: 15px; }
+        .result-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px; }
+        .result-info h3 { margin-bottom: 5px; }
+        .result-info .meta { color: #666; font-size: 14px; margin-bottom: 10px; }
+        .result-info .details { font-size: 14px; color: #333; margin-bottom: 10px; }
+        .skip-section { text-align: center; margin-top: 30px; padding: 20px; border-top: 1px solid #ddd; }
+        .error { background: #ffebee; color: #c62828; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+        .disabled { background: #ccc; cursor: not-allowed; }
+        .manual-entry { margin-top: 20px; padding: 20px; background: #f9f9f9; border-radius: 4px; }
+        .manual-entry summary { cursor: pointer; font-weight: bold; margin-bottom: 15px; }
+        .manual-entry-form { margin-top: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="breadcrumb">
+        <a href="/import">← Cancel Import</a>
+    </div>
+
+    <h1>Import Media - Step 2 of 5</h1>
+    <div class="progress">
+        <div class="progress-bar">
+            <div class="step active"></div>
+            <div class="step active"></div>
+            <div class="step"></div>
+            <div class="step"></div>
+            <div class="step"></div>
+        </div>
+    </div>
+
+    {{if .MusicBrainzAvailable}}
+    <div class="search-box">
+        <h2 style="margin-bottom: 15px;">Search MusicBrainz (Optional)</h2>
+        <form class="search-form" method="GET">
+            <input type="hidden" name="session" value="{{.SessionID}}">
+            <input type="text" name="artist" placeholder="Enter artist name..." value="{{.Artist}}">
+            <input type="text" name="title" placeholder="Enter release title..." value="{{.Title}}">
+            <button type="submit" class="btn">Search</button>
+        </form>
+        <p style="color: #666; font-size: 14px;">Search MusicBrainz to automatically fetch release information. Or skip to enter manually.</p>
+    </div>
+
+    {{if .Error}}
+    <div class="error">{{.Error}}</div>
+    {{end}}
+
+    {{if .Results}}
+    <div class="results">
+        <h3 style="margin-bottom: 15px;">Search Results</h3>
+        {{range .Results}}
+        <div class="result">
+            <div class="result-info">
+                <h3>{{.Title}}</h3>
+                <div class="meta">
+                    {{if .GetArtistNames}}{{.GetArtistNames}}{{else}}Unknown Artist{{end}}
+                    {{if .Date}} • {{.Date}}{{end}}
+                    {{if .Status}} • {{.Status}}{{end}}
+                    {{if .Country}} • {{.Country}}{{end}}
+                </div>
+                <div class="details">
+                    {{if .GetFormat}}Format: {{.GetFormat}}{{end}}
+                    {{if .GetTrackCount}} • {{.GetTrackCount}} track(s){{end}}
+                    {{if .ReleaseGroup.PrimaryType}} • Type: {{.ReleaseGroup.PrimaryType}}{{end}}
+                </div>
+                <a href="/import/step2/confirm-musicbrainz?session={{$.SessionID | urlquery}}&id={{.ID}}" class="btn">Select This</a>
+            </div>
+        </div>
+        {{end}}
+    </div>
+    {{else if or .Artist .Title}}
+    <p style="color: #666; margin-top: 20px;">No results found. Try different search terms.</p>
+    {{end}}
+
+    <div class="manual-entry">
+        <details>
+            <summary>Or enter MusicBrainz ID manually</summary>
+            <div class="manual-entry-form">
+                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                    If you know the MusicBrainz release ID, you can enter it directly.<br>
+                    Find releases at <a href="https://musicbrainz.org/" target="_blank">musicbrainz.org</a>
+                </p>
+                <form method="GET" action="/import/step2/confirm-musicbrainz">
+                    <input type="hidden" name="session" value="{{.SessionID}}">
+                    <div class="form-group">
+                        <label for="mb_id">MusicBrainz Release ID:</label>
+                        <input type="text" id="mb_id" name="id" placeholder="e.g., 12345678-1234-1234-1234-123456789012" required>
+                    </div>
+                    <button type="submit" class="btn">Set MusicBrainz ID</button>
+                </form>
+            </div>
+        </details>
+    </div>
+    {{else}}
+    <div class="search-box">
+        <h2 style="margin-bottom: 15px;">MusicBrainz Not Available</h2>
+        <p style="color: #666;">MusicBrainz client is not configured. You'll need to enter the artist and title manually.</p>
+    </div>
+    {{end}}
+
+    <div class="skip-section">
+        <form method="POST">
+            <p style="margin-bottom: 15px; color: #666;">Or skip MusicBrainz search and enter artist/title manually</p>
+            <button type="submit" name="action" value="skip" class="btn btn-secondary">Skip MusicBrainz Search</button>
+        </form>
+    </div>
+</body>
+</html>
