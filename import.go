@@ -40,7 +40,8 @@ type ImportSession struct {
 	MediaKind   MediaType // Film, TV, or Music
 	Title       string    // Media title
 	Year        int       // Year (for films, 0 for TV and Music)
-	TMDBID      string    // TMDB ID (optional)
+	TMDBID      string    // TMDB ID (optional, for Film/TV)
+	MusicBrainzID string  // MusicBrainz ID (optional, for Music)
 	SeriesNum   int       // Series number (for TV)
 	DiskNum     int       // Disk number (for TV) or film disk number
 	DiskType    DiskType  // Selected disk type
@@ -48,11 +49,18 @@ type ImportSession struct {
 	AddToExisting bool    // Add to existing media vs create new
 	ExistingMediaPath string // Path to existing media (if adding)
 
-	// Metadata from TMDB (if selected)
+	// Metadata from TMDB (if selected, for Film/TV)
 	TMDBTitle   string   // Official title from TMDB
 	TMDBYear    int      // Year from TMDB (for films)
 	TMDBOverview string  // Description
 	TMDBGenres  []string // Genres
+
+	// Metadata from MusicBrainz (if selected, for Music)
+	MBArtist    string   // Artist name from MusicBrainz
+	MBTitle     string   // Album title from MusicBrainz
+	MBDate      string   // Release date from MusicBrainz
+	MBFormat    string   // Format from MusicBrainz
+	MBTrackCount int     // Total track count from MusicBrainz
 }
 
 // ImportScanner scans the import directory for available imports
@@ -204,10 +212,12 @@ func ExecuteImport(session *ImportSession, mediaDir string) error {
 		return fmt.Errorf("source directory is nil")
 	}
 
-	// Determine the final title (prefer TMDB title if available)
+	// Determine the final title (prefer TMDB/MusicBrainz title if available)
 	finalTitle := session.Title
 	if session.TMDBTitle != "" {
 		finalTitle = session.TMDBTitle
+	} else if session.MBTitle != "" {
+		finalTitle = session.MBTitle
 	}
 
 	// Determine the final year (prefer TMDB year if available)
@@ -270,6 +280,18 @@ func ExecuteImport(session *ImportSession, mediaDir string) error {
 			if err := os.WriteFile(tmdbPath, []byte(session.TMDBID), 0644); err != nil {
 				// Log warning but don't fail the import
 				fmt.Printf("Warning: Failed to write TMDB ID: %v\n", err)
+			}
+		}
+	}
+
+	// Write MusicBrainz ID if provided
+	if session.MusicBrainzID != "" {
+		mbPath := filepath.Join(destMediaPath, "musicbrainz.txt")
+		// Only write if it doesn't exist (don't overwrite existing MusicBrainz ID)
+		if _, err := os.Stat(mbPath); os.IsNotExist(err) {
+			if err := os.WriteFile(mbPath, []byte(session.MusicBrainzID), 0644); err != nil {
+				// Log warning but don't fail the import
+				fmt.Printf("Warning: Failed to write MusicBrainz ID: %v\n", err)
 			}
 		}
 	}

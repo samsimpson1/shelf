@@ -204,7 +204,7 @@ func (app *App) ImportStep1Handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ImportStep2Handler handles step 2: TMDB search or manual entry
+// ImportStep2Handler handles step 2: TMDB/MusicBrainz search or manual entry
 func (app *App) ImportStep2Handler(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.URL.Query().Get("session")
 	if sessionID == "" {
@@ -218,83 +218,142 @@ func (app *App) ImportStep2Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Handle "skip TMDB" action
+	// Handle "skip search" action
 	if r.Method == http.MethodPost && r.FormValue("action") == "skip" {
 		// Redirect to manual entry (step 3)
 		http.Redirect(w, r, "/import/step3?session="+url.QueryEscape(sessionID), http.StatusSeeOther)
 		return
 	}
 
-	// Handle TMDB search
-	query := r.URL.Query().Get("query")
-	yearStr := r.URL.Query().Get("year")
-	year := 0
-
-	// Parse year if provided
-	if yearStr != "" {
-		parsedYear, err := strconv.Atoi(yearStr)
-		if err == nil && parsedYear > 0 {
-			year = parsedYear
-		}
-	}
-
+	// Handle search based on media kind
 	var results interface{}
 	var searchErr error
+	var searchAvailable bool
 
-	// Perform search if query is provided
-	if query != "" && app.tmdbClient != nil {
-		if session.MediaKind == Film {
-			movieResults, err := app.tmdbClient.SearchMovies(query, year)
+	if session.MediaKind == Music {
+		// MusicBrainz search for Music
+		artist := r.URL.Query().Get("artist")
+		title := r.URL.Query().Get("title")
+
+		searchAvailable = app.musicBrainzClient != nil
+
+		// Perform MusicBrainz search if query is provided
+		if (artist != "" || title != "") && app.musicBrainzClient != nil {
+			mbResults, err := app.musicBrainzClient.SearchReleases(artist, title)
 			if err != nil {
 				searchErr = err
 			} else {
-				results = movieResults
-			}
-		} else if session.MediaKind == TV {
-			tvResults, err := app.tmdbClient.SearchTV(query)
-			if err != nil {
-				searchErr = err
-			} else {
-				results = tvResults
+				results = mbResults
 			}
 		}
-	}
 
-	// Prepare error message
-	var errorMsg string
-	if searchErr != nil {
-		errorMsg = fmt.Sprintf("Search error: %v", searchErr)
-	}
+		// Reload templates in dev mode
+		tmpl := app.templates
+		if app.devMode {
+			tmpl = app.loadTemplates()
+		}
 
-	// Reload templates in dev mode
-	tmpl := app.templates
-	if app.devMode {
-		tmpl = app.loadTemplates()
-	}
+		// Prepare error message
+		var errorMsg string
+		if searchErr != nil {
+			errorMsg = fmt.Sprintf("Search error: %v", searchErr)
+		}
 
-	data := struct {
-		Session       *ImportSession
-		SessionID     string
-		Query         string
-		Year          int
-		Results       interface{}
-		Error         string
-		TMDBAvailable bool
-	}{
-		Session:       session,
-		SessionID:     sessionID,
-		Query:         query,
-		Year:          year,
-		Results:       results,
-		Error:         errorMsg,
-		TMDBAvailable: app.tmdbClient != nil,
-	}
+		data := struct {
+			Session             *ImportSession
+			SessionID           string
+			Artist              string
+			Title               string
+			Results             interface{}
+			Error               string
+			MusicBrainzAvailable bool
+		}{
+			Session:             session,
+			SessionID:           sessionID,
+			Artist:              artist,
+			Title:               title,
+			Results:             results,
+			Error:               errorMsg,
+			MusicBrainzAvailable: searchAvailable,
+		}
 
-	err := tmpl.ExecuteTemplate(w, "import_step2.html", data)
-	if err != nil {
-		log.Printf("Error rendering import_step2 template: %v", err)
-		http.Error(w, "Error rendering template", http.StatusInternalServerError)
-		return
+		err := tmpl.ExecuteTemplate(w, "import_step2_musicbrainz.html", data)
+		if err != nil {
+			log.Printf("Error rendering import_step2_musicbrainz template: %v", err)
+			http.Error(w, "Error rendering template", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		// TMDB search for Film/TV
+		query := r.URL.Query().Get("query")
+		yearStr := r.URL.Query().Get("year")
+		year := 0
+
+		// Parse year if provided
+		if yearStr != "" {
+			parsedYear, err := strconv.Atoi(yearStr)
+			if err == nil && parsedYear > 0 {
+				year = parsedYear
+			}
+		}
+
+		searchAvailable = app.tmdbClient != nil
+
+		// Perform search if query is provided
+		if query != "" && app.tmdbClient != nil {
+			if session.MediaKind == Film {
+				movieResults, err := app.tmdbClient.SearchMovies(query, year)
+				if err != nil {
+					searchErr = err
+				} else {
+					results = movieResults
+				}
+			} else if session.MediaKind == TV {
+				tvResults, err := app.tmdbClient.SearchTV(query)
+				if err != nil {
+					searchErr = err
+				} else {
+					results = tvResults
+				}
+			}
+		}
+
+		// Prepare error message
+		var errorMsg string
+		if searchErr != nil {
+			errorMsg = fmt.Sprintf("Search error: %v", searchErr)
+		}
+
+		// Reload templates in dev mode
+		tmpl := app.templates
+		if app.devMode {
+			tmpl = app.loadTemplates()
+		}
+
+		data := struct {
+			Session       *ImportSession
+			SessionID     string
+			Query         string
+			Year          int
+			Results       interface{}
+			Error         string
+			TMDBAvailable bool
+		}{
+			Session:       session,
+			SessionID:     sessionID,
+			Query:         query,
+			Year:          year,
+			Results:       results,
+			Error:         errorMsg,
+			TMDBAvailable: searchAvailable,
+		}
+
+		err := tmpl.ExecuteTemplate(w, "import_step2.html", data)
+		if err != nil {
+			log.Printf("Error rendering import_step2 template: %v", err)
+			http.Error(w, "Error rendering template", http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -360,6 +419,72 @@ func (app *App) ImportStep2ConfirmHandler(w http.ResponseWriter, r *http.Request
 	http.Redirect(w, r, "/import/step4?session="+url.QueryEscape(sessionID), http.StatusSeeOther)
 }
 
+// ImportStep2ConfirmMusicBrainzHandler handles MusicBrainz match selection
+func (app *App) ImportStep2ConfirmMusicBrainzHandler(w http.ResponseWriter, r *http.Request) {
+	sessionID := r.URL.Query().Get("session")
+	mbID := r.URL.Query().Get("id")
+
+	if sessionID == "" || mbID == "" {
+		http.Error(w, "Session ID and MusicBrainz ID are required", http.StatusBadRequest)
+		return
+	}
+
+	session, ok := importSessionStore.Get(sessionID)
+	if !ok {
+		http.Error(w, "Invalid session", http.StatusNotFound)
+		return
+	}
+
+	if app.musicBrainzClient == nil {
+		http.Error(w, "MusicBrainz client is not configured", http.StatusServiceUnavailable)
+		return
+	}
+
+	// Fetch release metadata from MusicBrainz
+	release, err := app.musicBrainzClient.FetchRelease(mbID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to fetch release metadata: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Store MusicBrainz ID and metadata in session
+	session.MusicBrainzID = mbID
+	session.MBTitle = release.Title
+	session.MBDate = release.Date
+
+	// Calculate format and track count
+	if len(release.Media) > 0 {
+		// Get format from first medium
+		firstFormat := release.Media[0].Format
+		allSame := true
+		for _, medium := range release.Media {
+			if medium.Format != firstFormat {
+				allSame = false
+				break
+			}
+		}
+		if allSame && firstFormat != "" {
+			session.MBFormat = firstFormat
+		} else {
+			session.MBFormat = "Various"
+		}
+
+		// Count total tracks
+		totalTracks := 0
+		for _, medium := range release.Media {
+			totalTracks += len(medium.Tracks)
+		}
+		session.MBTrackCount = totalTracks
+	}
+
+	// Get artist name (we need to search again to get artist info, or extract from first track)
+	// For now, we'll leave MBArtist empty and let the user see it in the confirmation page
+	// The artist info will be in the release data when we display it
+
+	// Redirect to step 4 (disk details)
+	http.Redirect(w, r, "/import/step4?session="+url.QueryEscape(sessionID), http.StatusSeeOther)
+}
+
 // ImportStep3Handler handles step 3: manual title/year entry
 func (app *App) ImportStep3Handler(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.URL.Query().Get("session")
@@ -382,22 +507,35 @@ func (app *App) ImportStep3Handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		title := r.FormValue("title")
-		if title == "" {
-			http.Error(w, "Title is required", http.StatusBadRequest)
-			return
-		}
-		session.Title = title
-
-		// Year is required for films
-		if session.MediaKind == Film {
-			yearStr := r.FormValue("year")
-			year, err := strconv.Atoi(yearStr)
-			if err != nil || year <= 0 {
-				http.Error(w, "Valid year is required for films", http.StatusBadRequest)
+		if session.MediaKind == Music {
+			// For Music, we need artist and title
+			artist := r.FormValue("artist")
+			title := r.FormValue("title")
+			if title == "" {
+				http.Error(w, "Title is required", http.StatusBadRequest)
 				return
 			}
-			session.Year = year
+			session.Title = title
+			session.MBArtist = artist // Store artist in MBArtist field
+		} else {
+			// For Film/TV, we need title and optionally year
+			title := r.FormValue("title")
+			if title == "" {
+				http.Error(w, "Title is required", http.StatusBadRequest)
+				return
+			}
+			session.Title = title
+
+			// Year is required for films
+			if session.MediaKind == Film {
+				yearStr := r.FormValue("year")
+				year, err := strconv.Atoi(yearStr)
+				if err != nil || year <= 0 {
+					http.Error(w, "Valid year is required for films", http.StatusBadRequest)
+					return
+				}
+				session.Year = year
+			}
 		}
 
 		// Redirect to step 4 (disk details)
@@ -727,7 +865,36 @@ func (app *App) ImportExecuteHandler(w http.ResponseWriter, r *http.Request) {
 
 		err = app.tmdbClient.FetchAndSaveMetadata(media)
 		if err != nil {
-			log.Printf("Warning: Failed to fetch metadata: %v", err)
+			log.Printf("Warning: Failed to fetch TMDB metadata: %v", err)
+			// Don't fail the import, just log the warning
+		}
+	}
+
+	// Fetch and save MusicBrainz metadata if available
+	if session.MusicBrainzID != "" && app.musicBrainzClient != nil {
+		// Determine the media path
+		var mediaPath string
+		if session.AddToExisting {
+			mediaPath = session.ExistingMediaPath
+		} else {
+			finalTitle := session.Title
+			if session.MBTitle != "" {
+				finalTitle = session.MBTitle
+			}
+			mediaDir := GenerateMediaDirName(finalTitle, 0, session.MediaKind)
+			mediaPath = app.mediaDir + "/" + mediaDir
+		}
+
+		// Create a temporary Media object for metadata fetching
+		media := &Media{
+			Type:          session.MediaKind,
+			MusicBrainzID: session.MusicBrainzID,
+			Path:          mediaPath,
+		}
+
+		err = app.musicBrainzClient.FetchAndSaveTrackList(media)
+		if err != nil {
+			log.Printf("Warning: Failed to fetch MusicBrainz metadata: %v", err)
 			// Don't fail the import, just log the warning
 		}
 	}
