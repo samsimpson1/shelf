@@ -67,6 +67,9 @@
                 {{if .Media.TMDBID}}
                 <div class="meta-item"><strong>TMDB:</strong> <a href="https://www.themoviedb.org/{{if eq .Media.Type 0}}movie{{else}}tv{{end}}/{{.Media.TMDBID}}" target="_blank" rel="noopener">{{.Media.TMDBID}}</a></div>
                 {{end}}
+                {{if .Media.MusicBrainzID}}
+                <div class="meta-item"><strong>MusicBrainz:</strong> <a href="https://musicbrainz.org/release/{{.Media.MusicBrainzID}}" target="_blank" rel="noopener">{{.Media.MusicBrainzID}}</a></div>
+                {{end}}
             </div>
             {{if .Genres}}
             <div class="genres">

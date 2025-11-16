@@ -236,9 +236,9 @@ func TestIntegrationEndToEnd(t *testing.T) {
 		t.Fatalf("Scan failed: %v", err)
 	}
 
-	// Verify scan results
-	if len(mediaList) != 3 {
-		t.Fatalf("Expected 3 media items, got %d", len(mediaList))
+	// Verify scan results (2 films, 1 TV, 1 music)
+	if len(mediaList) != 4 {
+		t.Fatalf("Expected 4 media items, got %d", len(mediaList))
 	}
 
 	// Load templates

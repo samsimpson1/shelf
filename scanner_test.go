@@ -60,8 +60,8 @@ func TestScanTestdata(t *testing.T) {
 		t.Fatalf("Scan() error = %v", err)
 	}
 
-	// We expect 3 media items from our testdata
-	expectedCount := 3
+	// We expect 4 media items from our testdata (2 films, 1 TV, 1 music)
+	expectedCount := 4
 	if len(mediaList) != expectedCount {
 		t.Errorf("Scan() returned %d items, want %d", len(mediaList), expectedCount)
 	}
@@ -130,6 +130,27 @@ func TestScanTestdata(t *testing.T) {
 		}
 	} else {
 		t.Error("No TMDB not found in scan results")
+	}
+
+	// Test Pink Floyd - The Wall music
+	if media, ok := mediaMap["Pink Floyd - The Wall"]; ok {
+		if media.Type != Music {
+			t.Errorf("Pink Floyd - The Wall: Type = %v, want Music", media.Type)
+		}
+		if media.Year != 0 {
+			t.Errorf("Pink Floyd - The Wall: Year = %v, want 0", media.Year)
+		}
+		if media.DiskCount != 1 {
+			t.Errorf("Pink Floyd - The Wall: DiskCount = %v, want 1", media.DiskCount)
+		}
+		if len(media.Disks) != 1 {
+			t.Errorf("Pink Floyd - The Wall: len(Disks) = %v, want 1", len(media.Disks))
+		}
+		if media.MusicBrainzID != "f9f5eb32-2d59-4f6f-9308-6388b69979d6" {
+			t.Errorf("Pink Floyd - The Wall: MusicBrainzID = %v, want f9f5eb32-2d59-4f6f-9308-6388b69979d6", media.MusicBrainzID)
+		}
+	} else {
+		t.Error("Pink Floyd - The Wall not found in scan results")
 	}
 }
 
@@ -443,6 +464,52 @@ func TestReadTitleWithWhitespace(t *testing.T) {
 	title := scanner.readTitle(tmpDir)
 	if title != "The Matrix" {
 		t.Errorf("readTitle() = %v, want 'The Matrix' (whitespace should be trimmed)", title)
+	}
+}
+
+func TestReadMusicBrainzID(t *testing.T) {
+	testDir := setupTestData(t)
+	scanner := NewScanner(testDir)
+
+	// Pink Floyd - The Wall should have MusicBrainz ID
+	path := filepath.Join(testDir, "Pink Floyd - The Wall [Music]")
+	id := scanner.readMusicBrainzID(path)
+	if id != "f9f5eb32-2d59-4f6f-9308-6388b69979d6" {
+		t.Errorf("readMusicBrainzID() = %v, want f9f5eb32-2d59-4f6f-9308-6388b69979d6", id)
+	}
+
+	// War of the Worlds (Film) should not have MusicBrainz ID
+	path = filepath.Join(testDir, "War of the Worlds (2025) [Film]")
+	id = scanner.readMusicBrainzID(path)
+	if id != "" {
+		t.Errorf("readMusicBrainzID() = %v, want empty string", id)
+	}
+
+	// Nonexistent path should return empty string
+	id = scanner.readMusicBrainzID("/nonexistent/path")
+	if id != "" {
+		t.Errorf("readMusicBrainzID() for nonexistent path = %v, want empty string", id)
+	}
+}
+
+func TestReadMusicBrainzIDWithWhitespace(t *testing.T) {
+	// Create a temporary directory with a musicbrainz.txt file containing whitespace
+	tmpDir, err := os.MkdirTemp("", "musicbrainz-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	mbFile := filepath.Join(tmpDir, "musicbrainz.txt")
+	err = os.WriteFile(mbFile, []byte("  abc123-def456-ghi789  \n"), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scanner := NewScanner("/tmp")
+	id := scanner.readMusicBrainzID(tmpDir)
+	if id != "abc123-def456-ghi789" {
+		t.Errorf("readMusicBrainzID() = %v, want 'abc123-def456-ghi789' (whitespace should be trimmed)", id)
 	}
 }
 

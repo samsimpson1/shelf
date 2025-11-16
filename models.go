@@ -41,13 +41,14 @@ type Disk struct {
 
 // Media represents a media item from the backup directory
 type Media struct {
-	Title     string    // Title of the media
-	Type      MediaType // Film, TV, or Music
-	Year      int       // Year (for films, 0 for TV shows and Music)
-	DiskCount int       // Number of disks
-	Disks     []Disk    // Individual disk information
-	TMDBID    string    // TMDB ID (optional, empty string if not present; Music does not use TMDB)
-	Path      string    // Absolute path to the media directory
+	Title          string    // Title of the media
+	Type           MediaType // Film, TV, or Music
+	Year           int       // Year (for films, 0 for TV shows and Music)
+	DiskCount      int       // Number of disks
+	Disks          []Disk    // Individual disk information
+	TMDBID         string    // TMDB ID (optional, empty string if not present; Music does not use TMDB)
+	MusicBrainzID  string    // MusicBrainz release ID (optional, only for Music media type)
+	Path           string    // Absolute path to the media directory
 }
 
 // DisplayTitle returns the title with year for films, just title for TV and Music
