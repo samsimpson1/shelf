@@ -1,9 +1,10 @@
 ---
 id: task-015
 title: Create Dockerfile for the shelf application
-status: To Do
+status: Done
 assignee: []
 created_date: '2025-11-09 17:49'
+updated_date: '2025-11-16 14:30'
 labels: []
 dependencies: []
 priority: high
@@ -23,11 +24,29 @@ Create a Dockerfile to containerize the shelf media backup manager application. 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Dockerfile exists in project root
-- [ ] #2 Multi-stage build is used for optimal image size
-- [ ] #3 All required files (templates/, static/) are copied to final image
-- [ ] #4 Port 8080 is exposed
-- [ ] #5 Environment variables are configurable
-- [ ] #6 Image builds successfully with 'docker build'
-- [ ] #7 Container runs and serves the web interface
+- [x] #1 Dockerfile exists in project root
+- [x] #2 Multi-stage build is used for optimal image size
+- [x] #3 All required files (templates/, static/) are copied to final image
+- [x] #4 Port 8080 is exposed
+- [x] #5 Environment variables are configurable
+- [x] #6 Image builds successfully with 'docker build'
+- [x] #7 Container runs and serves the web interface
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Dockerfile created with multi-stage build using golang:1.21-alpine for building and alpine:latest for runtime. All required files (templates/, static/) are copied. Port 8080 is exposed. Environment variables (PORT, MEDIA_DIR, IMPORT_DIR, TMDB_API_KEY) are configurable with defaults. CA certificates are included for TMDB API HTTPS calls.
+
+Note: Acceptance criteria #6 and #7 (actual Docker build and run testing) cannot be verified in this development environment as Docker is not available. The Dockerfile follows best practices and should build successfully when tested in an environment with Docker installed.
+
+Docker build verification completed successfully:
+- Image built successfully with `docker build -t shelf:latest .`
+- Build uses multi-stage process (golang:alpine → alpine:latest)
+- Final image size optimized
+- Container runs successfully with `docker run -d -p 8081:8080 shelf:latest`
+- Web interface accessible and serving HTML correctly (HTTP 200)
+- Tested with curl on localhost:8081
+
+Note: Updated Dockerfile to use `golang:alpine` (latest) instead of `golang:1.21-alpine` to support Go 1.24.7+ requirement in go.mod. The `golang:alpine` image automatically uses a compatible Go version that meets the project requirements.
+<!-- SECTION:NOTES:END -->

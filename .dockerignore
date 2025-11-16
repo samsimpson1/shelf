@@ -1,0 +1,49 @@
+# Test files
+*_test.go
+test_helpers.go
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+LICENSE
+
+# Backlog
+backlog/
+
+# Node/npm (for E2E tests)
+node_modules/
+package.json
+package-lock.json
+playwright.config.ts
+tsconfig.json
+e2e/
+
+# CI/CD
+.github/
+
+# Claude
+.claude/
+
+# MCP
+.mcp.json
+
+# Build artifacts (if any)
+shelf
+*.exe
+*.dll
+*.so
+*.dylib
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
