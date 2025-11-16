@@ -10,11 +10,14 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // App holds the application state
 type App struct {
 	mediaList      []Media
+	mediaListMutex sync.RWMutex // Protects concurrent access to mediaList
+	scanner        *Scanner     // Scanner for refreshing media list
 	templates      *template.Template
 	mediaDir       string
 	importDir      string // Path to import directory
@@ -25,7 +28,7 @@ type App struct {
 }
 
 // NewApp creates a new App instance
-func NewApp(mediaList []Media, templates *template.Template, mediaDir, importDir string) *App {
+func NewApp(mediaList []Media, scanner *Scanner, templates *template.Template, mediaDir, importDir string) *App {
 	var importScanner *ImportScanner
 	if importDir != "" {
 		importScanner = NewImportScanner(importDir)
@@ -33,6 +36,7 @@ func NewApp(mediaList []Media, templates *template.Template, mediaDir, importDir
 
 	return &App{
 		mediaList:     mediaList,
+		scanner:       scanner,
 		templates:     templates,
 		mediaDir:      mediaDir,
 		importDir:     importDir,
@@ -56,6 +60,23 @@ func (app *App) SetDevMode(enabled bool) {
 // SetPlayURLPrefix sets the URL prefix for play commands
 func (app *App) SetPlayURLPrefix(prefix string) {
 	app.playURLPrefix = prefix
+}
+
+// RefreshMediaList re-scans the media directory and updates the media list
+func (app *App) RefreshMediaList() error {
+	// Re-scan the media directory
+	newMediaList, err := app.scanner.Scan()
+	if err != nil {
+		return fmt.Errorf("failed to refresh media list: %w", err)
+	}
+
+	// Update the media list with write lock
+	app.mediaListMutex.Lock()
+	app.mediaList = newMediaList
+	app.mediaListMutex.Unlock()
+
+	log.Printf("Media list refreshed: %d items", len(newMediaList))
+	return nil
 }
 
 // loadTemplates reloads templates from disk (used in dev mode)
@@ -89,10 +110,13 @@ func (app *App) IndexHandler(w http.ResponseWriter, r *http.Request) {
 		tmpl = app.loadTemplates()
 	}
 
-	// Sort media list: Films first, then TV shows, alphabetically within each type
+	// Get a copy of the media list with read lock
+	app.mediaListMutex.RLock()
 	sorted := make([]Media, len(app.mediaList))
 	copy(sorted, app.mediaList)
+	app.mediaListMutex.RUnlock()
 
+	// Sort media list: Films first, then TV shows, alphabetically within each type
 	sort.Slice(sorted, func(i, j int) bool {
 		// Films come before TV shows
 		if sorted[i].Type != sorted[j].Type {
@@ -207,9 +231,14 @@ func (app *App) DetailHandler(w http.ResponseWriter, r *http.Request) {
 
 // findMediaBySlug finds a media item by its slug
 func (app *App) findMediaBySlug(slug string) *Media {
+	app.mediaListMutex.RLock()
+	defer app.mediaListMutex.RUnlock()
+
 	for i := range app.mediaList {
 		if app.mediaList[i].Slug() == slug {
-			return &app.mediaList[i]
+			// Return a copy to avoid concurrent access issues
+			mediaCopy := app.mediaList[i]
+			return &mediaCopy
 		}
 	}
 	return nil

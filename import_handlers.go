@@ -570,12 +570,14 @@ func (app *App) ImportStep5Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get compatible existing media (same type)
+	app.mediaListMutex.RLock()
 	var compatibleMedia []Media
 	for _, media := range app.mediaList {
 		if media.Type == session.MediaKind {
 			compatibleMedia = append(compatibleMedia, media)
 		}
 	}
+	app.mediaListMutex.RUnlock()
 
 	// Reload templates in dev mode
 	tmpl := app.templates
@@ -726,6 +728,13 @@ func (app *App) ImportExecuteHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Warning: Failed to fetch metadata: %v", err)
 			// Don't fail the import, just log the warning
 		}
+	}
+
+	// Refresh media list to include the newly imported media
+	err = app.RefreshMediaList()
+	if err != nil {
+		log.Printf("Warning: Failed to refresh media list: %v", err)
+		// Don't fail the import, just log the warning
 	}
 
 	// Clean up session
