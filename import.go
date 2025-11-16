@@ -37,9 +37,9 @@ type ImportSession struct {
 	DetectedType DiskType        // Auto-detected disk type
 
 	// User selections
-	MediaKind   MediaType // Film or TV
+	MediaKind   MediaType // Film, TV, or Music
 	Title       string    // Media title
-	Year        int       // Year (for films)
+	Year        int       // Year (for films, 0 for TV and Music)
 	TMDBID      string    // TMDB ID (optional)
 	SeriesNum   int       // Series number (for TV)
 	DiskNum     int       // Disk number (for TV) or film disk number
@@ -171,22 +171,24 @@ func SanitizeName(name string) string {
 }
 
 // GenerateMediaDirName generates the directory name for a media item
-// Follows the naming convention: "Title (Year) [Film]" or "Title [TV]"
+// Follows the naming convention: "Title (Year) [Film]", "Title [TV]", or "Title [Music]"
 func GenerateMediaDirName(title string, year int, mediaType MediaType) string {
 	sanitizedTitle := SanitizeName(title)
 
 	if mediaType == Film {
 		return fmt.Sprintf("%s (%d) [Film]", sanitizedTitle, year)
+	} else if mediaType == TV {
+		return fmt.Sprintf("%s [TV]", sanitizedTitle)
 	}
-	return fmt.Sprintf("%s [TV]", sanitizedTitle)
+	return fmt.Sprintf("%s [Music]", sanitizedTitle)
 }
 
 // GenerateDiskDirName generates the directory name for a disk
-// Follows the naming convention: "Disk [Format]" or "Series X Disk Y [Format]"
+// Follows the naming convention: "Disk [Format]" for Film/Music or "Series X Disk Y [Format]" for TV
 func GenerateDiskDirName(diskType string, seriesNum, diskNum int, mediaType MediaType) string {
 	sanitizedType := SanitizeName(diskType)
 
-	if mediaType == Film {
+	if mediaType == Film || mediaType == Music {
 		return fmt.Sprintf("Disk [%s]", sanitizedType)
 	}
 	return fmt.Sprintf("Series %d Disk %d [%s]", seriesNum, diskNum, sanitizedType)

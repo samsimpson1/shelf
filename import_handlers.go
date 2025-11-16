@@ -170,6 +170,8 @@ func (app *App) ImportStep1Handler(w http.ResponseWriter, r *http.Request) {
 			session.MediaKind = Film
 		} else if mediaKindStr == "tv" {
 			session.MediaKind = TV
+		} else if mediaKindStr == "music" {
+			session.MediaKind = Music
 		} else {
 			http.Error(w, "Invalid media kind", http.StatusBadRequest)
 			return
@@ -465,7 +467,7 @@ func (app *App) ImportStep4Handler(w http.ResponseWriter, r *http.Request) {
 			}
 			session.DiskNum = disk
 		} else {
-			// For films, disk number defaults to 1
+			// For films and music, disk number defaults to 1
 			session.DiskNum = 1
 		}
 

@@ -52,7 +52,7 @@
             <img src="{{.Media.PosterURL}}" alt="{{.Media.DisplayTitle}}" class="poster">
             {{else}}
             <div class="placeholder">
-                {{if eq .Media.Type 0}}🎬{{else}}📺{{end}}
+                {{if eq .Media.Type 0}}🎬{{else if eq .Media.Type 1}}📺{{else}}🎵{{end}}
             </div>
             {{end}}
         </div>
@@ -119,6 +119,7 @@
             </div>
             {{end}}
 
+            {{if ne .Media.Type 2}}
             <div class="tmdb-actions">
                 {{if .Media.TMDBID}}
                 <a href="/media/{{.Media.Slug}}/search-tmdb" class="btn btn-secondary">Change TMDB ID</a>
@@ -127,6 +128,7 @@
                 <a href="/media/{{.Media.Slug}}/search-tmdb" class="btn btn-primary">Search for TMDB ID</a>
                 {{end}}
             </div>
+            {{end}}
         </div>
     </div>
 

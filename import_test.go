@@ -163,6 +163,8 @@ func TestGenerateMediaDirName(t *testing.T) {
 		{"The Matrix", 1999, Film, "The Matrix (1999) [Film]"},
 		{"Breaking Bad", 0, TV, "Breaking Bad [TV]"},
 		{"Title: Subtitle", 2020, Film, "Title_ Subtitle (2020) [Film]"},
+		{"Pink Floyd - The Wall", 0, Music, "Pink Floyd - The Wall [Music]"},
+		{"Led Zeppelin: Live Concert", 1976, Music, "Led Zeppelin_ Live Concert [Music]"},
 	}
 
 	for _, tt := range tests {
@@ -189,6 +191,9 @@ func TestGenerateDiskDirName(t *testing.T) {
 		{"DVD", 1, 2, TV, "Series 1 Disk 2 [DVD]"},
 		{"Blu-Ray UHD", 3, 1, TV, "Series 3 Disk 1 [Blu-Ray UHD]"},
 		{"Custom: Type", 0, 1, Film, "Disk [Custom_ Type]"},
+		{"Blu-Ray", 0, 1, Music, "Disk [Blu-Ray]"},
+		{"DVD", 0, 1, Music, "Disk [DVD]"},
+		{"CD", 0, 1, Music, "Disk [CD]"},
 	}
 
 	for _, tt := range tests {

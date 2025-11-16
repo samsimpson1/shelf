@@ -251,6 +251,66 @@ func TestParseTVName(t *testing.T) {
 	}
 }
 
+func TestParseMusicName(t *testing.T) {
+	tests := []struct {
+		name        string
+		dirName     string
+		shouldMatch bool
+		wantTitle   string
+	}{
+		{
+			name:        "Valid Music",
+			dirName:     "Pink Floyd - The Wall [Music]",
+			shouldMatch: true,
+			wantTitle:   "Pink Floyd - The Wall",
+		},
+		{
+			name:        "Music with special chars",
+			dirName:     "Led Zeppelin: The Song Remains the Same [Music]",
+			shouldMatch: true,
+			wantTitle:   "Led Zeppelin: The Song Remains the Same",
+		},
+		{
+			name:        "Film (should not match)",
+			dirName:     "Some Movie (2020) [Film]",
+			shouldMatch: false,
+		},
+		{
+			name:        "TV show (should not match)",
+			dirName:     "Some Show [TV]",
+			shouldMatch: false,
+		},
+		{
+			name:        "Invalid format - no brackets",
+			dirName:     "Some Music Music",
+			shouldMatch: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			scanner := NewScanner("/tmp")
+			media, ok := scanner.parseMusic(tt.dirName, "/fake/path")
+
+			if ok != tt.shouldMatch {
+				t.Errorf("parseMusic() matched = %v, want %v", ok, tt.shouldMatch)
+			}
+
+			if tt.shouldMatch {
+				if media.Title != tt.wantTitle {
+					t.Errorf("parseMusic() Title = %v, want %v", media.Title, tt.wantTitle)
+				}
+				if media.Type != Music {
+					t.Errorf("parseMusic() Type = %v, want Music", media.Type)
+				}
+				if media.Year != 0 {
+					t.Errorf("parseMusic() Year = %v, want 0", media.Year)
+				}
+			}
+		})
+	}
+}
+
 func TestCountFilmDisks(t *testing.T) {
 	testDir := setupTestData(t)
 	scanner := NewScanner(testDir)

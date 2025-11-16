@@ -10,6 +10,7 @@ func TestMediaTypeString(t *testing.T) {
 	}{
 		{"Film type", Film, "Film"},
 		{"TV type", TV, "TV"},
+		{"Music type", Music, "Music"},
 		{"Unknown type", MediaType(99), "Unknown"},
 	}
 
@@ -64,6 +65,24 @@ func TestMediaDisplayTitle(t *testing.T) {
 				Year:  2008,
 			},
 			expected: "Breaking Bad",
+		},
+		{
+			name: "Music",
+			media: Media{
+				Title: "Pink Floyd - The Wall",
+				Type:  Music,
+				Year:  0,
+			},
+			expected: "Pink Floyd - The Wall",
+		},
+		{
+			name: "Music with year (should ignore)",
+			media: Media{
+				Title: "Led Zeppelin - The Song Remains the Same",
+				Type:  Music,
+				Year:  1976,
+			},
+			expected: "Led Zeppelin - The Song Remains the Same",
 		},
 	}
 
