@@ -1,9 +1,10 @@
 ---
 id: task-021
 title: 'Optimize import workflow: ask about existing media before TMDB search'
-status: To Do
+status: Done
 assignee: []
 created_date: '2025-12-04 21:33'
+updated_date: '2025-12-04 21:40'
 labels:
   - enhancement
   - ux
@@ -43,9 +44,9 @@ This saves time and cognitive load when adding additional disks to multi-disk re
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 When importing, users are asked "Add to existing or create new?" immediately after choosing media type
-- [ ] #2 If adding to existing media, TMDB search step is skipped entirely
-- [ ] #3 If creating new media, TMDB search/manual entry works as before
-- [ ] #4 All existing import functionality remains working
-- [ ] #5 E2E tests updated to cover both import paths
+- [x] #1 When importing, users are asked "Add to existing or create new?" immediately after choosing media type
+- [x] #2 If adding to existing media, TMDB search step is skipped entirely
+- [x] #3 If creating new media, TMDB search/manual entry works as before
+- [x] #4 All existing import functionality remains working
+- [x] #5 E2E tests updated to cover both import paths
 <!-- AC:END -->
