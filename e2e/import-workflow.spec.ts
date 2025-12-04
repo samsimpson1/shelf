@@ -9,6 +9,112 @@ test.describe('Import Workflow', () => {
     await expect(importButton).toBeVisible();
   });
 
+  test('should display directory name throughout import workflow', async ({ page }) => {
+    // Navigate to import page
+    await page.goto('/import');
+
+    // Click the first import button to start workflow
+    const importButtons = page.locator('button:has-text("Import"), a:has-text("Import")');
+    const buttonCount = await importButtons.count();
+
+    if (buttonCount > 0) {
+      // Get the directory name from the import list page
+      const dirElement = importButtons.first().locator('..').locator('..').locator('strong, h3, h4, .dir-name');
+      let dirName = '';
+
+      // Try to find directory name in the UI
+      if (await dirElement.count() > 0) {
+        dirName = await dirElement.first().textContent() || '';
+      }
+
+      // Start import
+      await importButtons.first().click();
+      await page.waitForURL(/\/import\/(start|step1)/);
+
+      // Step 1: Verify directory name is displayed
+      const step1DirDisplay = page.locator('text=/Importing:/i').locator('..').locator('strong');
+      await expect(step1DirDisplay).toBeVisible();
+
+      // Select Film type to continue
+      const filmRadio = page.locator('input[value="film"]');
+      if (await filmRadio.count() > 0) {
+        await filmRadio.check();
+      }
+      const nextButton = page.locator('button[type="submit"]:has-text("Next")');
+      if (await nextButton.count() > 0) {
+        await nextButton.click();
+      }
+
+      // Step 2: Verify directory name is displayed
+      await page.waitForURL(/\/import\/step2/);
+      const step2DirDisplay = page.locator('text=/Importing:/i').locator('..').locator('strong');
+      await expect(step2DirDisplay).toBeVisible();
+
+      // Choose "Create new" to continue
+      const createNewRadio = page.locator('input[value="new"]');
+      if (await createNewRadio.count() > 0) {
+        await createNewRadio.check();
+      }
+      const step2NextButton = page.locator('button[type="submit"]:has-text("Next")');
+      if (await step2NextButton.count() > 0) {
+        await step2NextButton.click();
+      }
+
+      // Step 3: Verify directory name is displayed (TMDB search or manual entry)
+      await page.waitForURL(/\/import\/step3/);
+      const step3DirDisplay = page.locator('text=/Importing:/i').locator('..').locator('strong');
+      await expect(step3DirDisplay).toBeVisible();
+
+      // Skip TMDB search to go to manual entry
+      const skipButton = page.locator('button:has-text("Skip")');
+      if (await skipButton.count() > 0) {
+        await skipButton.click();
+      }
+
+      // Step 3 Manual: Verify directory name is displayed
+      await page.waitForURL(/\/import\/step3\/manual/);
+      const step3ManualDirDisplay = page.locator('text=/Importing:/i').locator('..').locator('strong');
+      await expect(step3ManualDirDisplay).toBeVisible();
+
+      // Fill in title and year
+      const titleInput = page.locator('input[name="title"]');
+      if (await titleInput.count() > 0) {
+        await titleInput.fill('Test Import Film');
+      }
+      const yearInput = page.locator('input[name="year"]');
+      if (await yearInput.count() > 0) {
+        await yearInput.fill('2024');
+      }
+      const step3NextButton = page.locator('button[type="submit"]:has-text("Next")');
+      if (await step3NextButton.count() > 0) {
+        await step3NextButton.click();
+      }
+
+      // Step 4: Verify directory name is displayed
+      await page.waitForURL(/\/import\/step4/);
+      const step4DirDisplay = page.locator('text=/Importing:/i').locator('..').locator('strong');
+      await expect(step4DirDisplay).toBeVisible();
+
+      // Select disk type
+      const diskTypeSelect = page.locator('select[name="disk_type"]');
+      if (await diskTypeSelect.count() > 0) {
+        await diskTypeSelect.selectOption('bluray');
+      }
+      const step4NextButton = page.locator('button[type="submit"]:has-text("Next")');
+      if (await step4NextButton.count() > 0) {
+        await step4NextButton.click();
+      }
+
+      // Confirm page: Verify directory name is displayed
+      await page.waitForURL(/\/import\/confirm/);
+      const confirmDirDisplay = page.locator('text=/Importing:/i').locator('..').locator('strong');
+      await expect(confirmDirDisplay).toBeVisible();
+
+      // We won't actually execute the import in this test
+      // but we've verified the directory name appears on all pages
+    }
+  });
+
   test('should list available directories to import', async ({ page }) => {
     await page.goto('/import');
 

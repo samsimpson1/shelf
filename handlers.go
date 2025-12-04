@@ -15,16 +15,17 @@ import (
 
 // App holds the application state
 type App struct {
-	mediaList      []Media
-	mediaListMutex sync.RWMutex // Protects concurrent access to mediaList
-	scanner        *Scanner     // Scanner for refreshing media list
-	templates      *template.Template
-	mediaDir       string
-	importDir      string // Path to import directory
-	importScanner  *ImportScanner
-	devMode        bool // Enable template hot-reloading in development
-	tmdbClient     *TMDBClient
-	playURLPrefix  string // URL prefix for play commands
+	mediaList         []Media
+	mediaListMutex    sync.RWMutex // Protects concurrent access to mediaList
+	scanner           *Scanner     // Scanner for refreshing media list
+	templates         *template.Template
+	mediaDir          string
+	importDir         string // Path to import directory
+	importScanner     *ImportScanner
+	devMode           bool // Enable template hot-reloading in development
+	tmdbClient        *TMDBClient
+	musicBrainzClient *MusicBrainzClient
+	playURLPrefix     string // URL prefix for play commands
 }
 
 // NewApp creates a new App instance
@@ -35,21 +36,27 @@ func NewApp(mediaList []Media, scanner *Scanner, templates *template.Template, m
 	}
 
 	return &App{
-		mediaList:     mediaList,
-		scanner:       scanner,
-		templates:     templates,
-		mediaDir:      mediaDir,
-		importDir:     importDir,
-		importScanner: importScanner,
-		devMode:       false,
-		tmdbClient:    nil,
-		playURLPrefix: "",
+		mediaList:         mediaList,
+		scanner:           scanner,
+		templates:         templates,
+		mediaDir:          mediaDir,
+		importDir:         importDir,
+		importScanner:     importScanner,
+		devMode:           false,
+		tmdbClient:        nil,
+		musicBrainzClient: nil,
+		playURLPrefix:     "",
 	}
 }
 
 // SetTMDBClient sets the TMDB client for the app
 func (app *App) SetTMDBClient(client *TMDBClient) {
 	app.tmdbClient = client
+}
+
+// SetMusicBrainzClient sets the MusicBrainz client for the app
+func (app *App) SetMusicBrainzClient(client *MusicBrainzClient) {
+	app.musicBrainzClient = client
 }
 
 // SetDevMode enables or disables development mode (template hot-reloading)

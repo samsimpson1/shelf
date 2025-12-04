@@ -22,7 +22,11 @@
     <div class="success">
         <div class="success-icon">✅</div>
         <h1>Import Successful!</h1>
+        {{if .DirName}}
+        <p>Successfully imported <strong>{{.DirName}}</strong></p>
+        {{else}}
         <p>Your media has been imported and organized successfully.</p>
+        {{end}}
         <div class="actions">
             <a href="/" class="btn">View Library</a>
             <a href="/import" class="btn btn-secondary">Import Another</a>

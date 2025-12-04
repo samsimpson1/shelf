@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 )
@@ -30,10 +31,10 @@ func NewMusicBrainzClient() *MusicBrainzClient {
 
 // MBTrack represents a track from MusicBrainz API
 type MBTrack struct {
-	ID       string      `json:"id"`
-	Position int         `json:"position"`
-	Title    string      `json:"title"`
-	Length   int         `json:"length"` // Duration in milliseconds
+	ID        string      `json:"id"`
+	Position  int         `json:"position"`
+	Title     string      `json:"title"`
+	Length    int         `json:"length"` // Duration in milliseconds
 	Recording MBRecording `json:"recording"`
 }
 
@@ -56,6 +57,25 @@ type MBRelease struct {
 	ID    string     `json:"id"`
 	Title string     `json:"title"`
 	Media []MBMedium `json:"media"`
+}
+
+// MBReleaseSearchResult represents a release search result from MusicBrainz
+type MBReleaseSearchResult struct {
+	ID         string `json:"id"`
+	Title      string `json:"title"`
+	Artist     string `json:"artist-credit-phrase"` // Flattened artist string
+	Date       string `json:"date"`
+	Country    string `json:"country"`
+	TrackCount int    `json:"track-count"`
+	Score      int    `json:"score"` // Search relevance score (0-100)
+}
+
+// MBSearchResponse represents the MusicBrainz search response
+type MBSearchResponse struct {
+	Created  string                  `json:"created"`
+	Count    int                     `json:"count"`
+	Offset   int                     `json:"offset"`
+	Releases []MBReleaseSearchResult `json:"releases"`
 }
 
 // FetchRelease fetches release information including track list from MusicBrainz
@@ -91,6 +111,48 @@ func (c *MusicBrainzClient) FetchRelease(mbid string) (*MBRelease, error) {
 	}
 
 	return &release, nil
+}
+
+// SearchReleases searches for releases on MusicBrainz by query
+func (c *MusicBrainzClient) SearchReleases(query string) ([]MBReleaseSearchResult, error) {
+	if query == "" {
+		return nil, fmt.Errorf("search query cannot be empty")
+	}
+
+	// Build URL with query parameter (URL-encoded)
+	// We search for releases and include artist credits
+	url := fmt.Sprintf("%s/release?query=%s&fmt=json", musicBrainzAPIBaseURL, url.QueryEscape(query))
+
+	// Create request with required User-Agent header
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("User-Agent", musicBrainzUserAgent)
+
+	// Execute request
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search releases: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("MusicBrainz API returned status %d for search", resp.StatusCode)
+	}
+
+	var searchResp MBSearchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&searchResp); err != nil {
+		return nil, fmt.Errorf("failed to decode search response: %w", err)
+	}
+
+	// Limit to 20 results
+	results := searchResp.Releases
+	if len(results) > 20 {
+		results = results[:20]
+	}
+
+	return results, nil
 }
 
 // ConvertToTrackList converts MusicBrainz release data to our TrackList format

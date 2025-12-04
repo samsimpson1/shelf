@@ -6,7 +6,7 @@
     <title>Import Step 3 - Shelf</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        body { font-family: sans-serif; padding: 20px; max-width: 900px; margin: 0 auto; }
         h1 { margin-bottom: 10px; }
         .breadcrumb { margin-bottom: 20px; color: #666; }
         .breadcrumb a { color: #0066cc; text-decoration: none; }
@@ -15,13 +15,24 @@
         .progress-bar { display: flex; gap: 10px; }
         .step { flex: 1; height: 4px; background: #eee; border-radius: 2px; }
         .step.active { background: #0066cc; }
-        form { background: white; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], input[type="number"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; }
-        .btn { background: #0066cc; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        .search-box { background: #f5f5f5; padding: 20px; border-radius: 4px; margin-bottom: 20px; }
+        .search-form { display: flex; gap: 10px; margin-bottom: 15px; }
+        .search-form input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        .search-form input[type="number"] { width: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        .btn { background: #0066cc; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
         .btn:hover { background: #0052a3; }
-        .help-text { color: #666; font-size: 14px; margin-top: 5px; }
+        .btn-secondary { background: #666; }
+        .btn-secondary:hover { background: #555; }
+        .results { margin-top: 20px; }
+        .result { border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin-bottom: 15px; display: flex; gap: 15px; }
+        .result img { width: 92px; height: 138px; object-fit: cover; border-radius: 4px; }
+        .result-info { flex: 1; }
+        .result-info h3 { margin-bottom: 5px; }
+        .result-info .meta { color: #666; font-size: 14px; margin-bottom: 10px; }
+        .result-info .overview { font-size: 14px; color: #333; margin-bottom: 10px; }
+        .skip-section { text-align: center; margin-top: 30px; padding: 20px; border-top: 1px solid #ddd; }
+        .error { background: #ffebee; color: #c62828; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+        .disabled { background: #ccc; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -29,35 +40,92 @@
         <a href="/import">← Cancel Import</a>
     </div>
 
-    <h1>Import Media - Step 3 of 5</h1>
+    <h1>Import Media - Step 3 of 4</h1>
     <div class="progress">
         <div class="progress-bar">
             <div class="step active"></div>
             <div class="step active"></div>
             <div class="step active"></div>
             <div class="step"></div>
-            <div class="step"></div>
         </div>
     </div>
 
-    <h2 style="margin-bottom: 20px;">Enter Media Details</h2>
+    <div style="background: #f5f5f5; padding: 10px 15px; border-radius: 4px; margin-bottom: 20px; color: #666; font-size: 14px;">
+        Importing: <strong style="color: #333;">{{.Session.SourceDir.Name}}</strong>
+    </div>
 
-    <form method="POST">
-        <div class="form-group">
-            <label for="title">Title *</label>
-            <input type="text" id="title" name="title" required>
-            <div class="help-text">Enter the exact title of the media</div>
-        </div>
+    {{if or .TMDBAvailable (eq .Session.MediaKind 2)}}
+    <div class="search-box">
+        <h2 style="margin-bottom: 15px;">
+            {{if eq .Session.MediaKind 2}}Search MusicBrainz{{else}}Search TMDB (Optional){{end}}
+        </h2>
+        <form class="search-form" method="GET">
+            <input type="hidden" name="session" value="{{.SessionID}}">
+            <input type="text" name="query" placeholder="Enter title to search..." value="{{.Query}}">
+            {{if eq .Session.MediaKind 0}}
+            <input type="number" name="year" placeholder="Year" value="{{if .Year}}{{.Year}}{{end}}">
+            {{end}}
+            <button type="submit" class="btn">Search</button>
+        </form>
+        <p style="color: #666; font-size: 14px;">
+            {{if eq .Session.MediaKind 2}}
+            Search MusicBrainz to automatically fetch artist and release details.
+            {{else}}
+            Search TMDB to automatically fetch title, year, and metadata. Or skip to enter manually.
+            {{end}}
+        </p>
+    </div>
 
-        {{if eq .Session.MediaKind 0}}
-        <div class="form-group">
-            <label for="year">Year *</label>
-            <input type="number" id="year" name="year" min="1800" max="2100" required>
-            <div class="help-text">Enter the release year</div>
+    {{if .Error}}
+    <div class="error">{{.Error}}</div>
+    {{end}}
+
+    {{if .Results}}
+    <div class="results">
+        <h3 style="margin-bottom: 15px;">Search Results</h3>
+        {{range .Results}}
+        <div class="result">
+            {{if .PosterPath}}
+            <img src="https://image.tmdb.org/t/p/w92{{.PosterPath}}" alt="{{.GetTitle}}">
+            {{else}}
+            <div style="width: 92px; height: 138px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 48px;">
+                {{if eq $.Session.MediaKind 2}}🎵{{else}}📽️{{end}}
+            </div>
+            {{end}}
+            <div class="result-info">
+                {{if eq $.Session.MediaKind 2}}
+                <h3>{{.Title}}</h3>
+                <div class="meta">{{.Artist}} • {{.Date}} • {{.TrackCount}} tracks</div>
+                <div class="overview">{{.Country}} • Score: {{.Score}}</div>
+                <a href="/import/step3/confirm?session={{$.SessionID | urlquery}}&id={{.ID}}" class="btn">Select This</a>
+                {{else}}
+                <h3>{{.GetTitle}}</h3>
+                <div class="meta">{{.GetDate}} • Popularity: {{printf "%.1f" .Popularity}}</div>
+                {{if .Overview}}
+                <div class="overview">{{.Overview}}</div>
+                {{end}}
+                <a href="/import/step3/confirm?session={{$.SessionID | urlquery}}&id={{.ID}}" class="btn">Select This</a>
+                {{end}}
+            </div>
         </div>
         {{end}}
+    </div>
+    {{else if .Query}}
+    <p style="color: #666; margin-top: 20px;">No results found. Try a different search.</p>
+    {{end}}
+    {{else}}
+    <div class="search-box">
+        <h2 style="margin-bottom: 15px;">Metadata Search Not Available</h2>
+        <p style="color: #666;">API is not configured. You'll need to enter the details manually.</p>
+    </div>
+    {{end}}
 
-        <button type="submit" class="btn">Next</button>
-    </form>
+    <div class="skip-section">
+        <form method="POST">
+            <input type="hidden" name="action" value="skip">
+            <p style="margin-bottom: 15px; color: #666;">Or skip TMDB search and enter title/year manually</p>
+            <button type="submit" class="btn btn-secondary">Skip TMDB Search</button>
+        </form>
+    </div>
 </body>
 </html>

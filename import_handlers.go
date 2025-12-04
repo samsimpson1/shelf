@@ -177,7 +177,7 @@ func (app *App) ImportStep1Handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Redirect to step 2 (TMDB search or manual entry)
+		// Redirect to step 2 (add to existing or create new)
 		http.Redirect(w, r, "/import/step2?session="+url.QueryEscape(sessionID), http.StatusSeeOther)
 		return
 	}
@@ -204,8 +204,95 @@ func (app *App) ImportStep1Handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ImportStep2Handler handles step 2: TMDB search or manual entry
+// ImportStep2Handler handles step 2: add to existing or create new media
 func (app *App) ImportStep2Handler(w http.ResponseWriter, r *http.Request) {
+	sessionID := r.URL.Query().Get("session")
+	if sessionID == "" {
+		http.Error(w, "Session ID is required", http.StatusBadRequest)
+		return
+	}
+
+	session, ok := importSessionStore.Get(sessionID)
+	if !ok {
+		http.Error(w, "Invalid session", http.StatusNotFound)
+		return
+	}
+
+	// Handle form submission
+	if r.Method == http.MethodPost {
+		err := r.ParseForm()
+		if err != nil {
+			http.Error(w, "Failed to parse form", http.StatusBadRequest)
+			return
+		}
+
+		action := r.FormValue("action")
+		if action == "new" {
+			session.AddToExisting = false
+			// Redirect to TMDB search/manual entry (step 3)
+			http.Redirect(w, r, "/import/step3?session="+url.QueryEscape(sessionID), http.StatusSeeOther)
+			return
+		} else if action == "existing" {
+			session.AddToExisting = true
+			existingSlug := r.FormValue("existing_media")
+			if existingSlug == "" {
+				http.Error(w, "Existing media selection is required", http.StatusBadRequest)
+				return
+			}
+
+			// Find media by slug
+			media := app.findMediaBySlug(existingSlug)
+			if media == nil {
+				http.Error(w, "Selected media not found", http.StatusNotFound)
+				return
+			}
+
+			session.ExistingMediaPath = media.Path
+			// Skip TMDB search and go to disk details (step 4)
+			http.Redirect(w, r, "/import/step4?session="+url.QueryEscape(sessionID), http.StatusSeeOther)
+			return
+		} else {
+			http.Error(w, "Invalid action", http.StatusBadRequest)
+			return
+		}
+	}
+
+	// Get compatible existing media (same type)
+	app.mediaListMutex.RLock()
+	var compatibleMedia []Media
+	for _, media := range app.mediaList {
+		if media.Type == session.MediaKind {
+			compatibleMedia = append(compatibleMedia, media)
+		}
+	}
+	app.mediaListMutex.RUnlock()
+
+	// Reload templates in dev mode
+	tmpl := app.templates
+	if app.devMode {
+		tmpl = app.loadTemplates()
+	}
+
+	data := struct {
+		Session         *ImportSession
+		SessionID       string
+		CompatibleMedia []Media
+	}{
+		Session:         session,
+		SessionID:       sessionID,
+		CompatibleMedia: compatibleMedia,
+	}
+
+	err := tmpl.ExecuteTemplate(w, "import_step2.html", data)
+	if err != nil {
+		log.Printf("Error rendering import_step2 template: %v", err)
+		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+		return
+	}
+}
+
+// ImportStep3Handler handles step 3: TMDB search or manual entry (only for new media)
+func (app *App) ImportStep3Handler(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.URL.Query().Get("session")
 	if sessionID == "" {
 		http.Error(w, "Session ID is required", http.StatusBadRequest)
@@ -220,8 +307,8 @@ func (app *App) ImportStep2Handler(w http.ResponseWriter, r *http.Request) {
 
 	// Handle "skip TMDB" action
 	if r.Method == http.MethodPost && r.FormValue("action") == "skip" {
-		// Redirect to manual entry (step 3)
-		http.Redirect(w, r, "/import/step3?session="+url.QueryEscape(sessionID), http.StatusSeeOther)
+		// Redirect to manual entry (step 3b)
+		http.Redirect(w, r, "/import/step3/manual?session="+url.QueryEscape(sessionID), http.StatusSeeOther)
 		return
 	}
 
@@ -242,20 +329,27 @@ func (app *App) ImportStep2Handler(w http.ResponseWriter, r *http.Request) {
 	var searchErr error
 
 	// Perform search if query is provided
-	if query != "" && app.tmdbClient != nil {
-		if session.MediaKind == Film {
+	if query != "" {
+		if session.MediaKind == Film && app.tmdbClient != nil {
 			movieResults, err := app.tmdbClient.SearchMovies(query, year)
 			if err != nil {
 				searchErr = err
 			} else {
 				results = movieResults
 			}
-		} else if session.MediaKind == TV {
+		} else if session.MediaKind == TV && app.tmdbClient != nil {
 			tvResults, err := app.tmdbClient.SearchTV(query)
 			if err != nil {
 				searchErr = err
 			} else {
 				results = tvResults
+			}
+		} else if session.MediaKind == Music && app.musicBrainzClient != nil {
+			musicResults, err := app.musicBrainzClient.SearchReleases(query)
+			if err != nil {
+				searchErr = err
+			} else {
+				results = musicResults
 			}
 		}
 	}
@@ -290,16 +384,16 @@ func (app *App) ImportStep2Handler(w http.ResponseWriter, r *http.Request) {
 		TMDBAvailable: app.tmdbClient != nil,
 	}
 
-	err := tmpl.ExecuteTemplate(w, "import_step2.html", data)
+	err := tmpl.ExecuteTemplate(w, "import_step3.html", data)
 	if err != nil {
-		log.Printf("Error rendering import_step2 template: %v", err)
+		log.Printf("Error rendering import_step3 template: %v", err)
 		http.Error(w, "Error rendering template", http.StatusInternalServerError)
 		return
 	}
 }
 
-// ImportStep2ConfirmHandler handles TMDB match selection
-func (app *App) ImportStep2ConfirmHandler(w http.ResponseWriter, r *http.Request) {
+// ImportStep3ConfirmHandler handles TMDB match selection
+func (app *App) ImportStep3ConfirmHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.URL.Query().Get("session")
 	tmdbID := r.URL.Query().Get("id")
 
@@ -314,13 +408,12 @@ func (app *App) ImportStep2ConfirmHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if app.tmdbClient == nil {
-		http.Error(w, "TMDB API is not configured", http.StatusServiceUnavailable)
-		return
-	}
-
-	// Fetch metadata from TMDB
+	// Fetch metadata from TMDB or MusicBrainz
 	if session.MediaKind == Film {
+		if app.tmdbClient == nil {
+			http.Error(w, "TMDB API is not configured", http.StatusServiceUnavailable)
+			return
+		}
 		movie, err := app.tmdbClient.FetchMovieMetadata(tmdbID)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Failed to fetch movie metadata: %v", err), http.StatusInternalServerError)
@@ -341,6 +434,10 @@ func (app *App) ImportStep2ConfirmHandler(w http.ResponseWriter, r *http.Request
 			session.TMDBGenres[i] = genre.Name
 		}
 	} else if session.MediaKind == TV {
+		if app.tmdbClient == nil {
+			http.Error(w, "TMDB API is not configured", http.StatusServiceUnavailable)
+			return
+		}
 		tv, err := app.tmdbClient.FetchTVMetadata(tmdbID)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Failed to fetch TV metadata: %v", err), http.StatusInternalServerError)
@@ -354,14 +451,30 @@ func (app *App) ImportStep2ConfirmHandler(w http.ResponseWriter, r *http.Request
 		for i, genre := range tv.Genres {
 			session.TMDBGenres[i] = genre.Name
 		}
+	} else if session.MediaKind == Music {
+		if app.musicBrainzClient == nil {
+			http.Error(w, "MusicBrainz client is not configured", http.StatusServiceUnavailable)
+			return
+		}
+		// For Music, the ID passed is the MusicBrainz Release ID
+		// We fetch the release to get details
+		release, err := app.musicBrainzClient.FetchRelease(tmdbID)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to fetch release metadata: %v", err), http.StatusInternalServerError)
+			return
+		}
+		session.MusicBrainzID = tmdbID
+		session.MusicBrainzTitle = release.Title
+		// We don't have artist in the release struct yet, but we can get it from search or add it to release
+		// For now, let's just use the title
 	}
 
 	// Redirect to step 4 (disk details)
 	http.Redirect(w, r, "/import/step4?session="+url.QueryEscape(sessionID), http.StatusSeeOther)
 }
 
-// ImportStep3Handler handles step 3: manual title/year entry
-func (app *App) ImportStep3Handler(w http.ResponseWriter, r *http.Request) {
+// ImportStep3ManualHandler handles step 3b: manual title/year entry (when TMDB is skipped)
+func (app *App) ImportStep3ManualHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.URL.Query().Get("session")
 	if sessionID == "" {
 		http.Error(w, "Session ID is required", http.StatusBadRequest)
@@ -419,9 +532,9 @@ func (app *App) ImportStep3Handler(w http.ResponseWriter, r *http.Request) {
 		SessionID: sessionID,
 	}
 
-	err := tmpl.ExecuteTemplate(w, "import_step3.html", data)
+	err := tmpl.ExecuteTemplate(w, "import_step3_manual.html", data)
 	if err != nil {
-		log.Printf("Error rendering import_step3 template: %v", err)
+		log.Printf("Error rendering import_step3_manual template: %v", err)
 		http.Error(w, "Error rendering template", http.StatusInternalServerError)
 		return
 	}
@@ -493,8 +606,8 @@ func (app *App) ImportStep4Handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Redirect to step 5 (add to existing or create new)
-		http.Redirect(w, r, "/import/step5?session="+url.QueryEscape(sessionID), http.StatusSeeOther)
+		// Redirect to confirmation page
+		http.Redirect(w, r, "/import/confirm?session="+url.QueryEscape(sessionID), http.StatusSeeOther)
 		return
 	}
 
@@ -515,91 +628,6 @@ func (app *App) ImportStep4Handler(w http.ResponseWriter, r *http.Request) {
 	err := tmpl.ExecuteTemplate(w, "import_step4.html", data)
 	if err != nil {
 		log.Printf("Error rendering import_step4 template: %v", err)
-		http.Error(w, "Error rendering template", http.StatusInternalServerError)
-		return
-	}
-}
-
-// ImportStep5Handler handles step 5: add to existing or create new media
-func (app *App) ImportStep5Handler(w http.ResponseWriter, r *http.Request) {
-	sessionID := r.URL.Query().Get("session")
-	if sessionID == "" {
-		http.Error(w, "Session ID is required", http.StatusBadRequest)
-		return
-	}
-
-	session, ok := importSessionStore.Get(sessionID)
-	if !ok {
-		http.Error(w, "Invalid session", http.StatusNotFound)
-		return
-	}
-
-	// Handle form submission
-	if r.Method == http.MethodPost {
-		err := r.ParseForm()
-		if err != nil {
-			http.Error(w, "Failed to parse form", http.StatusBadRequest)
-			return
-		}
-
-		action := r.FormValue("action")
-		if action == "new" {
-			session.AddToExisting = false
-		} else if action == "existing" {
-			session.AddToExisting = true
-			existingSlug := r.FormValue("existing_media")
-			if existingSlug == "" {
-				http.Error(w, "Existing media selection is required", http.StatusBadRequest)
-				return
-			}
-
-			// Find media by slug
-			media := app.findMediaBySlug(existingSlug)
-			if media == nil {
-				http.Error(w, "Selected media not found", http.StatusNotFound)
-				return
-			}
-
-			session.ExistingMediaPath = media.Path
-		} else {
-			http.Error(w, "Invalid action", http.StatusBadRequest)
-			return
-		}
-
-		// Redirect to confirmation page
-		http.Redirect(w, r, "/import/confirm?session="+url.QueryEscape(sessionID), http.StatusSeeOther)
-		return
-	}
-
-	// Get compatible existing media (same type)
-	app.mediaListMutex.RLock()
-	var compatibleMedia []Media
-	for _, media := range app.mediaList {
-		if media.Type == session.MediaKind {
-			compatibleMedia = append(compatibleMedia, media)
-		}
-	}
-	app.mediaListMutex.RUnlock()
-
-	// Reload templates in dev mode
-	tmpl := app.templates
-	if app.devMode {
-		tmpl = app.loadTemplates()
-	}
-
-	data := struct {
-		Session         *ImportSession
-		SessionID       string
-		CompatibleMedia []Media
-	}{
-		Session:         session,
-		SessionID:       sessionID,
-		CompatibleMedia: compatibleMedia,
-	}
-
-	err := tmpl.ExecuteTemplate(w, "import_step5.html", data)
-	if err != nil {
-		log.Printf("Error rendering import_step5 template: %v", err)
 		http.Error(w, "Error rendering template", http.StatusInternalServerError)
 		return
 	}
@@ -654,13 +682,13 @@ func (app *App) ImportConfirmHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := struct {
-		Session  *ImportSession
+		Session   *ImportSession
 		SessionID string
-		DestPath string
+		DestPath  string
 	}{
-		Session:  session,
+		Session:   session,
 		SessionID: sessionID,
-		DestPath: destPath,
+		DestPath:  destPath,
 	}
 
 	err := tmpl.ExecuteTemplate(w, "import_confirm.html", data)
@@ -739,22 +767,34 @@ func (app *App) ImportExecuteHandler(w http.ResponseWriter, r *http.Request) {
 		// Don't fail the import, just log the warning
 	}
 
+	// Store directory name before cleaning up session
+	dirName := session.SourceDir.Name
+
 	// Clean up session
 	importSessionStore.Delete(sessionID)
 
-	// Redirect to success page
-	http.Redirect(w, r, "/import/success", http.StatusSeeOther)
+	// Redirect to success page with directory name
+	http.Redirect(w, r, "/import/success?dir="+url.QueryEscape(dirName), http.StatusSeeOther)
 }
 
 // ImportSuccessHandler shows the import success page
 func (app *App) ImportSuccessHandler(w http.ResponseWriter, r *http.Request) {
+	// Get directory name from query parameter
+	dirName := r.URL.Query().Get("dir")
+
 	// Reload templates in dev mode
 	tmpl := app.templates
 	if app.devMode {
 		tmpl = app.loadTemplates()
 	}
 
-	err := tmpl.ExecuteTemplate(w, "import_success.html", nil)
+	data := struct {
+		DirName string
+	}{
+		DirName: dirName,
+	}
+
+	err := tmpl.ExecuteTemplate(w, "import_success.html", data)
 	if err != nil {
 		log.Printf("Error rendering import_success template: %v", err)
 		http.Error(w, "Error rendering template", http.StatusInternalServerError)

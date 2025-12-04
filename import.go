@@ -33,26 +33,31 @@ func (d DiskType) String() string {
 // ImportSession represents an ongoing import workflow
 type ImportSession struct {
 	// Source information
-	SourceDir   *ImportDirectory // Directory being imported
-	DetectedType DiskType        // Auto-detected disk type
+	SourceDir    *ImportDirectory // Directory being imported
+	DetectedType DiskType         // Auto-detected disk type
 
 	// User selections
-	MediaKind   MediaType // Film, TV, or Music
-	Title       string    // Media title
-	Year        int       // Year (for films, 0 for TV and Music)
-	TMDBID      string    // TMDB ID (optional)
-	SeriesNum   int       // Series number (for TV)
-	DiskNum     int       // Disk number (for TV) or film disk number
-	DiskType    DiskType  // Selected disk type
-	DiskTypeCustom string // Custom disk type text
-	AddToExisting bool    // Add to existing media vs create new
-	ExistingMediaPath string // Path to existing media (if adding)
+	MediaKind         MediaType // Film, TV, or Music
+	Title             string    // Media title
+	Year              int       // Year (for films, 0 for TV and Music)
+	TMDBID            string    // TMDB ID (optional)
+	SeriesNum         int       // Series number (for TV)
+	DiskNum           int       // Disk number (for TV) or film disk number
+	DiskType          DiskType  // Selected disk type
+	DiskTypeCustom    string    // Custom disk type text
+	AddToExisting     bool      // Add to existing media vs create new
+	ExistingMediaPath string    // Path to existing media (if adding)
 
 	// Metadata from TMDB (if selected)
-	TMDBTitle   string   // Official title from TMDB
-	TMDBYear    int      // Year from TMDB (for films)
-	TMDBOverview string  // Description
-	TMDBGenres  []string // Genres
+	TMDBTitle    string   // Official title from TMDB
+	TMDBYear     int      // Year from TMDB (for films)
+	TMDBOverview string   // Description
+	TMDBGenres   []string // Genres
+
+	// Metadata from MusicBrainz (if selected)
+	MusicBrainzID     string // Release ID
+	MusicBrainzTitle  string // Release Title
+	MusicBrainzArtist string // Artist Name
 }
 
 // ImportScanner scans the import directory for available imports
@@ -204,10 +209,12 @@ func ExecuteImport(session *ImportSession, mediaDir string) error {
 		return fmt.Errorf("source directory is nil")
 	}
 
-	// Determine the final title (prefer TMDB title if available)
+	// Determine the final title (prefer TMDB/MB title if available)
 	finalTitle := session.Title
 	if session.TMDBTitle != "" {
 		finalTitle = session.TMDBTitle
+	} else if session.MusicBrainzTitle != "" {
+		finalTitle = session.MusicBrainzTitle
 	}
 
 	// Determine the final year (prefer TMDB year if available)
@@ -270,6 +277,18 @@ func ExecuteImport(session *ImportSession, mediaDir string) error {
 			if err := os.WriteFile(tmdbPath, []byte(session.TMDBID), 0644); err != nil {
 				// Log warning but don't fail the import
 				fmt.Printf("Warning: Failed to write TMDB ID: %v\n", err)
+			}
+		}
+	}
+
+	// Write MusicBrainz ID if provided
+	if session.MusicBrainzID != "" {
+		mbPath := filepath.Join(destMediaPath, "musicbrainz.txt")
+		// Only write if it doesn't exist
+		if _, err := os.Stat(mbPath); os.IsNotExist(err) {
+			if err := os.WriteFile(mbPath, []byte(session.MusicBrainzID), 0644); err != nil {
+				// Log warning but don't fail the import
+				fmt.Printf("Warning: Failed to write MusicBrainz ID: %v\n", err)
 			}
 		}
 	}
