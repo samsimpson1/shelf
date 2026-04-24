@@ -9,7 +9,9 @@
       "Bash(pkill:*)",
       "Bash(npm test)",
       "Bash(ls:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(npm test:*)"
     ],
     "deny": [],
     "ask": []
