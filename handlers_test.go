@@ -538,7 +538,7 @@ func TestSelectPosterHandler(t *testing.T) {
 		{Title: "Test Film", Type: Film, Year: 2020, TMDBID: "123", Path: "/test/path", DiskCount: 1},
 	}
 
-	app := NewApp(mediaList, tmpl, "/test/media", "")
+	app := NewApp(mediaList, nil, tmpl, "/test/media", "")
 
 	req := httptest.NewRequest(http.MethodGet, "/media/test-film-2020/select-poster", nil)
 	w := httptest.NewRecorder()
@@ -563,7 +563,7 @@ func TestSelectPosterHandlerNoTMDBID(t *testing.T) {
 		{Title: "Test Film", Type: Film, Year: 2020, TMDBID: "", Path: "/test/path", DiskCount: 1},
 	}
 
-	app := NewApp(mediaList, tmpl, "/test/media", "")
+	app := NewApp(mediaList, nil, tmpl, "/test/media", "")
 	client := NewTMDBClient("test-key")
 	app.SetTMDBClient(client)
 
@@ -585,7 +585,7 @@ func TestSelectPosterHandlerNotFound(t *testing.T) {
 	tmpl := template.Must(template.New("select_poster.html").Parse(`Poster selection page`))
 
 	mediaList := []Media{}
-	app := NewApp(mediaList, tmpl, "/test/media", "")
+	app := NewApp(mediaList, nil, tmpl, "/test/media", "")
 	client := NewTMDBClient("test-key")
 	app.SetTMDBClient(client)
 
@@ -607,7 +607,7 @@ func TestSavePosterHandlerMethodNotAllowed(t *testing.T) {
 		{Title: "Test Film", Type: Film, Year: 2020, TMDBID: "123", Path: "/test/path", DiskCount: 1},
 	}
 
-	app := NewApp(mediaList, nil, "/test/media", "")
+	app := NewApp(mediaList, nil, nil, "/test/media", "")
 	client := NewTMDBClient("test-key")
 	app.SetTMDBClient(client)
 
@@ -630,7 +630,7 @@ func TestSavePosterHandlerNoTMDBClient(t *testing.T) {
 		{Title: "Test Film", Type: Film, Year: 2020, TMDBID: "123", Path: "/test/path", DiskCount: 1},
 	}
 
-	app := NewApp(mediaList, nil, "/test/media", "")
+	app := NewApp(mediaList, nil, nil, "/test/media", "")
 
 	req := httptest.NewRequest(http.MethodPost, "/media/test-film-2020/save-poster", nil)
 	w := httptest.NewRecorder()
@@ -650,7 +650,7 @@ func TestSavePosterHandlerMissingPosterPath(t *testing.T) {
 		{Title: "Test Film", Type: Film, Year: 2020, TMDBID: "123", Path: "/test/path", DiskCount: 1},
 	}
 
-	app := NewApp(mediaList, nil, "/test/media", "")
+	app := NewApp(mediaList, nil, nil, "/test/media", "")
 	client := NewTMDBClient("test-key")
 	app.SetTMDBClient(client)
 
@@ -671,7 +671,7 @@ func TestSavePosterHandlerMissingPosterPath(t *testing.T) {
 
 func TestSavePosterHandlerNotFound(t *testing.T) {
 	mediaList := []Media{}
-	app := NewApp(mediaList, nil, "/test/media", "")
+	app := NewApp(mediaList, nil, nil, "/test/media", "")
 	client := NewTMDBClient("test-key")
 	app.SetTMDBClient(client)
 
