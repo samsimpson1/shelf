@@ -386,7 +386,6 @@ func TestFindMediaBySlug(t *testing.T) {
 	}
 }
 
-<<<<<<< HEAD
 func TestRefreshMediaList(t *testing.T) {
 	// Create a temporary test directory
 	testDir := t.TempDir()
@@ -527,7 +526,9 @@ func setupTestMediaDir(t *testing.T, baseDir string, paths []string) {
 		if err != nil {
 			t.Fatalf("Failed to create test directory %s: %v", fullPath, err)
 		}
-=======
+	}
+}
+
 func TestSelectPosterHandler(t *testing.T) {
 	// Create a simple template
 	tmpl := template.Must(template.New("select_poster.html").Parse(`Poster selection page`))
@@ -686,6 +687,5 @@ func TestSavePosterHandlerNotFound(t *testing.T) {
 
 	if res.StatusCode != http.StatusNotFound {
 		t.Errorf("SavePosterHandler() for nonexistent media status = %v, want %v", res.StatusCode, http.StatusNotFound)
->>>>>>> b3b3297 (add poster selector functionality)
 	}
 }
