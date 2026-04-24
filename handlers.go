@@ -93,6 +93,7 @@ func (app *App) loadTemplates() *template.Template {
 		"templates/detail.html",
 		"templates/search.html",
 		"templates/confirm.html",
+		"templates/select_poster.html",
 		"templates/import_list.html",
 		"templates/import_step1.html",
 		"templates/import_step2.html",
@@ -559,6 +560,138 @@ func (app *App) SaveTMDBHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Successfully fetched metadata for %s", media.Title)
 		}
 	}
+
+	// Redirect back to detail page
+	http.Redirect(w, r, "/media/"+url.PathEscape(slug), http.StatusSeeOther)
+}
+
+// SelectPosterHandler handles the poster selection page
+func (app *App) SelectPosterHandler(w http.ResponseWriter, r *http.Request) {
+	// Check if TMDB client is available
+	if app.tmdbClient == nil {
+		http.Error(w, "TMDB API is not configured", http.StatusServiceUnavailable)
+		return
+	}
+
+	// Reload templates in dev mode
+	tmpl := app.templates
+	if app.devMode {
+		tmpl = app.loadTemplates()
+	}
+
+	// Extract slug from URL: /media/{slug}/select-poster
+	path := strings.TrimPrefix(r.URL.Path, "/media/")
+	parts := strings.Split(path, "/")
+	if len(parts) < 2 {
+		http.NotFound(w, r)
+		return
+	}
+	slug := parts[0]
+
+	// Find media by slug
+	media := app.findMediaBySlug(slug)
+	if media == nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Check if media has TMDB ID
+	if media.TMDBID == "" {
+		http.Error(w, "Media does not have a TMDB ID", http.StatusBadRequest)
+		return
+	}
+
+	// Fetch poster images from TMDB
+	posters, err := app.tmdbClient.FetchPosterImages(media.TMDBID, media.Type)
+	if err != nil {
+		log.Printf("Failed to fetch poster images for %s: %v", media.Title, err)
+		http.Error(w, "Failed to fetch poster images from TMDB", http.StatusInternalServerError)
+		return
+	}
+
+	// Find current poster
+	currentPosterPath, hasPoster := media.FindPosterFile()
+
+	data := struct {
+		Media             *Media
+		Posters           []PosterImage
+		HasCurrentPoster  bool
+		CurrentPosterPath string
+	}{
+		Media:             media,
+		Posters:           posters,
+		HasCurrentPoster:  hasPoster,
+		CurrentPosterPath: currentPosterPath,
+	}
+
+	err = tmpl.ExecuteTemplate(w, "select_poster.html", data)
+	if err != nil {
+		log.Printf("Error rendering select_poster template: %v", err)
+		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+		return
+	}
+}
+
+// SavePosterHandler handles saving a selected poster
+func (app *App) SavePosterHandler(w http.ResponseWriter, r *http.Request) {
+	// Only accept POST requests
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Check if TMDB client is available
+	if app.tmdbClient == nil {
+		http.Error(w, "TMDB API is not configured", http.StatusServiceUnavailable)
+		return
+	}
+
+	// Extract slug from URL: /media/{slug}/save-poster
+	path := strings.TrimPrefix(r.URL.Path, "/media/")
+	parts := strings.Split(path, "/")
+	if len(parts) < 2 {
+		http.NotFound(w, r)
+		return
+	}
+	slug := parts[0]
+
+	// Find media by slug
+	media := app.findMediaBySlug(slug)
+	if media == nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Parse form data
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		return
+	}
+
+	// Get poster path from form
+	posterPath := r.FormValue("poster_path")
+	if posterPath == "" {
+		http.Error(w, "Poster path is required", http.StatusBadRequest)
+		return
+	}
+
+	// Delete existing poster (handles all extensions)
+	err = DeleteExistingPoster(media.Path)
+	if err != nil {
+		log.Printf("Warning: Failed to delete existing poster for %s: %v", media.Title, err)
+		// Continue anyway - we'll try to download the new poster
+	}
+
+	// Download the new poster
+	err = app.tmdbClient.DownloadPoster(posterPath, media.Path)
+	if err != nil {
+		log.Printf("Failed to download new poster for %s: %v", media.Title, err)
+		http.Error(w, "Failed to download poster", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Successfully saved new poster for %s", media.Title)
 
 	// Redirect back to detail page
 	http.Redirect(w, r, "/media/"+url.PathEscape(slug), http.StatusSeeOther)

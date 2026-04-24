@@ -976,3 +976,208 @@ func TestFetchAndSaveMetadataAllFilesExistWithTitle(t *testing.T) {
 		t.Error("Title file was modified")
 	}
 }
+
+func TestFetchPosterImagesEmptyID(t *testing.T) {
+	client := NewTMDBClient("test-key")
+
+	// Test with empty TMDB ID for Film
+	_, err := client.FetchPosterImages("", Film)
+	if err == nil {
+		t.Error("Expected error for empty TMDB ID, got nil")
+	}
+
+	// Test with empty TMDB ID for TV
+	_, err = client.FetchPosterImages("", TV)
+	if err == nil {
+		t.Error("Expected error for empty TMDB ID, got nil")
+	}
+}
+
+func TestFetchPosterImagesInvalidMediaType(t *testing.T) {
+	client := NewTMDBClient("test-key")
+
+	// Test with invalid media type
+	_, err := client.FetchPosterImages("12345", MediaType(999))
+	if err == nil {
+		t.Error("Expected error for unknown media type, got nil")
+	}
+
+	expectedMsg := "unknown media type"
+	if err != nil && err.Error() != expectedMsg && !contains(err.Error(), expectedMsg) {
+		t.Errorf("Expected error message to contain %q, got %q", expectedMsg, err.Error())
+	}
+}
+
+func TestDeleteExistingPosterNoFile(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "delete-poster-none-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Delete when no poster exists (should not error)
+	err = DeleteExistingPoster(tmpDir)
+	if err != nil {
+		t.Errorf("DeleteExistingPoster() failed when no poster exists: %v", err)
+	}
+}
+
+func TestDeleteExistingPosterJPG(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "delete-poster-jpg-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create a .jpg poster
+	posterPath := filepath.Join(tmpDir, "poster.jpg")
+	err = os.WriteFile(posterPath, []byte("test-poster"), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Delete it
+	err = DeleteExistingPoster(tmpDir)
+	if err != nil {
+		t.Errorf("DeleteExistingPoster() failed: %v", err)
+	}
+
+	// Verify it's gone
+	if _, err := os.Stat(posterPath); !os.IsNotExist(err) {
+		t.Error("Expected poster.jpg to be deleted, but it still exists")
+	}
+}
+
+func TestDeleteExistingPosterPNG(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "delete-poster-png-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create a .png poster
+	posterPath := filepath.Join(tmpDir, "poster.png")
+	err = os.WriteFile(posterPath, []byte("test-poster"), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Delete it
+	err = DeleteExistingPoster(tmpDir)
+	if err != nil {
+		t.Errorf("DeleteExistingPoster() failed: %v", err)
+	}
+
+	// Verify it's gone
+	if _, err := os.Stat(posterPath); !os.IsNotExist(err) {
+		t.Error("Expected poster.png to be deleted, but it still exists")
+	}
+}
+
+func TestDeleteExistingPosterMultipleExtensions(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "delete-poster-multi-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create multiple poster files with different extensions (should not happen normally)
+	jpgPath := filepath.Join(tmpDir, "poster.jpg")
+	pngPath := filepath.Join(tmpDir, "poster.png")
+
+	os.WriteFile(jpgPath, []byte("jpg-poster"), 0644)
+	os.WriteFile(pngPath, []byte("png-poster"), 0644)
+
+	// Delete - should remove all
+	err = DeleteExistingPoster(tmpDir)
+	if err != nil {
+		t.Errorf("DeleteExistingPoster() failed: %v", err)
+	}
+
+	// Verify both are gone
+	if _, err := os.Stat(jpgPath); !os.IsNotExist(err) {
+		t.Error("Expected poster.jpg to be deleted, but it still exists")
+	}
+	if _, err := os.Stat(pngPath); !os.IsNotExist(err) {
+		t.Error("Expected poster.png to be deleted, but it still exists")
+	}
+}
+
+func TestDeleteExistingPosterDirectoryTraversal(t *testing.T) {
+	// Test directory traversal prevention
+	err := DeleteExistingPoster("/fake/../path/../../etc")
+	if err == nil {
+		t.Error("Expected error for path with directory traversal, got nil")
+	}
+
+	expectedMsg := "directory traversal"
+	if err != nil && !contains(err.Error(), expectedMsg) {
+		t.Errorf("Expected error message to contain %q, got %q", expectedMsg, err.Error())
+	}
+}
+
+func TestDeleteExistingPosterWebP(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "delete-poster-webp-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create a .webp poster
+	posterPath := filepath.Join(tmpDir, "poster.webp")
+	err = os.WriteFile(posterPath, []byte("test-poster"), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Delete it
+	err = DeleteExistingPoster(tmpDir)
+	if err != nil {
+		t.Errorf("DeleteExistingPoster() failed: %v", err)
+	}
+
+	// Verify it's gone
+	if _, err := os.Stat(posterPath); !os.IsNotExist(err) {
+		t.Error("Expected poster.webp to be deleted, but it still exists")
+	}
+}
+
+func TestDeleteExistingPosterJPEG(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "delete-poster-jpeg-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create a .jpeg poster
+	posterPath := filepath.Join(tmpDir, "poster.jpeg")
+	err = os.WriteFile(posterPath, []byte("test-poster"), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Delete it
+	err = DeleteExistingPoster(tmpDir)
+	if err != nil {
+		t.Errorf("DeleteExistingPoster() failed: %v", err)
+	}
+
+	// Verify it's gone
+	if _, err := os.Stat(posterPath); !os.IsNotExist(err) {
+		t.Error("Expected poster.jpeg to be deleted, but it still exists")
+	}
+}
+
+// Helper function for string contains check
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(substr) == 0 || (len(s) > 0 && len(substr) > 0 && hasSubstring(s, substr)))
+}
+
+func hasSubstring(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}

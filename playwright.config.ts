@@ -1,4 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
+import * as dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -33,7 +37,7 @@ export default defineConfig({
 
   /* Run the Go server before starting tests */
   webServer: {
-    command: 'npx tsx e2e/setup-fixtures.ts && MEDIA_DIR=./e2e/fixtures/media IMPORT_DIR=./e2e/fixtures/import PORT=8080 TMDB_API_KEY=test_key_for_e2e ./shelf',
+    command: `npx tsx e2e/setup-fixtures.ts && MEDIA_DIR=./e2e/fixtures/media IMPORT_DIR=./e2e/fixtures/import PORT=8080 TMDB_API_KEY=${process.env.TMDB_API_KEY || 'test_key_for_e2e'} ./shelf`,
     url: 'http://localhost:8080',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,

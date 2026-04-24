@@ -504,3 +504,78 @@ func (c *TMDBClient) FetchAndSaveMetadata(media *Media) error {
 func (c *TMDBClient) FetchAndSavePoster(media *Media) error {
 	return c.FetchAndSaveMetadata(media)
 }
+
+// PosterImage represents a poster image from TMDB
+type PosterImage struct {
+	FilePath    string  `json:"file_path"`
+	Width       int     `json:"width"`
+	Height      int     `json:"height"`
+	VoteAverage float64 `json:"vote_average"`
+	VoteCount   int     `json:"vote_count"`
+	Language    string  `json:"iso_639_1"`
+}
+
+// PosterImagesResponse represents the TMDB API response for poster images
+type PosterImagesResponse struct {
+	Posters []PosterImage `json:"posters"`
+}
+
+// FetchPosterImages fetches all available poster images for a movie or TV show from TMDB
+func (c *TMDBClient) FetchPosterImages(tmdbID string, mediaType MediaType) ([]PosterImage, error) {
+	var endpoint string
+	if mediaType == Film {
+		endpoint = fmt.Sprintf("%s/movie/%s/images?api_key=%s", tmdbAPIBaseURL, tmdbID, c.apiKey)
+	} else if mediaType == TV {
+		endpoint = fmt.Sprintf("%s/tv/%s/images?api_key=%s", tmdbAPIBaseURL, tmdbID, c.apiKey)
+	} else {
+		return nil, fmt.Errorf("unknown media type: %v", mediaType)
+	}
+
+	resp, err := c.httpClient.Get(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch poster images: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("TMDB API returned status %d for poster images", resp.StatusCode)
+	}
+
+	var imagesResp PosterImagesResponse
+	if err := json.NewDecoder(resp.Body).Decode(&imagesResp); err != nil {
+		return nil, fmt.Errorf("failed to decode poster images response: %w", err)
+	}
+
+	return imagesResp.Posters, nil
+}
+
+// DeleteExistingPoster deletes any existing poster file in the media directory
+// This handles poster files with different extensions (.jpg, .jpeg, .png, .webp)
+func DeleteExistingPoster(mediaPath string) error {
+	// Validate path to prevent directory traversal
+	if strings.Contains(mediaPath, "..") {
+		return fmt.Errorf("invalid path: directory traversal detected")
+	}
+
+	cleanPath := filepath.Clean(mediaPath)
+
+	// Check each possible extension
+	deleted := false
+	for _, ext := range []string{".jpg", ".jpeg", ".png", ".webp"} {
+		posterPath := filepath.Join(cleanPath, "poster"+ext)
+		if _, err := os.Stat(posterPath); err == nil {
+			// File exists, delete it
+			if err := os.Remove(posterPath); err != nil {
+				return fmt.Errorf("failed to delete existing poster %s: %w", posterPath, err)
+			}
+			log.Printf("Deleted existing poster: %s", posterPath)
+			deleted = true
+		}
+	}
+
+	if !deleted {
+		log.Printf("No existing poster found to delete in %s", cleanPath)
+	}
+
+	return nil
+}

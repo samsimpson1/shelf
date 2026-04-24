@@ -164,6 +164,7 @@
             {{if ne .Media.Type 2}}
             <div class="tmdb-actions">
                 {{if .Media.TMDBID}}
+                <a href="/media/{{.Media.Slug}}/select-poster" class="btn btn-primary">Select Alternate Poster</a>
                 <a href="/media/{{.Media.Slug}}/search-tmdb" class="btn btn-secondary">Change TMDB ID</a>
                 <span class="warning">⚠️ Changing the TMDB ID will replace existing metadata</span>
                 {{else}}

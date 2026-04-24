@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Poster - {{.Media.DisplayTitle}}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .back { text-decoration: none; color: #666; margin-bottom: 20px; display: inline-block; }
+        h1 { margin-bottom: 10px; font-size: 24px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .current-poster { margin-bottom: 40px; padding-bottom: 40px; border-bottom: 2px solid #eee; }
+        .current-poster h2 { font-size: 18px; margin-bottom: 15px; }
+        .current-poster-container { display: flex; align-items: flex-start; gap: 20px; }
+        .current-poster img { width: 200px; display: block; border: 3px solid #2196F3; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .current-poster-placeholder { width: 200px; aspect-ratio: 2/3; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 64px; border: 3px solid #ddd; border-radius: 4px; }
+        .current-info { flex: 1; }
+        .current-info p { color: #666; line-height: 1.6; }
+        .alternate-posters h2 { font-size: 18px; margin-bottom: 20px; }
+        .filter-controls { margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-radius: 4px; }
+        .filter-controls label { display: inline-flex; align-items: center; cursor: pointer; }
+        .filter-controls input[type="checkbox"] { margin-right: 8px; }
+        .posters-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; }
+        .poster-card { background: white; border: 2px solid #ddd; border-radius: 4px; overflow: hidden; cursor: pointer; transition: all 0.2s; }
+        .poster-card:hover { border-color: #2196F3; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: translateY(-2px); }
+        .poster-card.hidden { display: none; }
+        .poster-card img { width: 100%; display: block; aspect-ratio: 2/3; object-fit: cover; }
+        .poster-card-info { padding: 10px; background: #f9f9f9; }
+        .poster-lang { font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
+        .poster-stats { font-size: 12px; color: #999; }
+        .poster-stats span { margin-right: 10px; }
+        .no-posters { text-align: center; padding: 40px; color: #999; }
+
+        /* Modal styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); }
+        .modal-content { background-color: #fefefe; margin: 50px auto; padding: 30px; border-radius: 8px; max-width: 600px; position: relative; }
+        .modal-close { position: absolute; right: 15px; top: 15px; font-size: 28px; font-weight: bold; color: #aaa; cursor: pointer; line-height: 1; }
+        .modal-close:hover { color: #000; }
+        .modal-poster { width: 100%; display: block; border-radius: 4px; margin-bottom: 20px; }
+        .modal-info { margin-bottom: 20px; }
+        .modal-info p { margin-bottom: 10px; color: #666; }
+        .modal-actions { display: flex; gap: 10px; }
+        .btn { padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; text-decoration: none; display: inline-block; text-align: center; }
+        .btn-primary { background: #2196F3; color: white; }
+        .btn-primary:hover { background: #1976D2; }
+        .btn-secondary { background: #eee; color: #333; }
+        .btn-secondary:hover { background: #ddd; }
+
+        @media (max-width: 768px) {
+            .posters-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; }
+            .current-poster-container { flex-direction: column; }
+            .modal-content { margin: 20px; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/media/{{.Media.Slug}}" class="back">← Back to {{.Media.DisplayTitle}}</a>
+
+        <h1>Select Alternate Poster</h1>
+        <p class="subtitle">Choose a different poster for {{.Media.DisplayTitle}}</p>
+
+        <div class="current-poster">
+            <h2>Current Poster</h2>
+            <div class="current-poster-container">
+                {{if .HasCurrentPoster}}
+                <img src="{{.Media.PosterURL}}" alt="Current poster">
+                {{else}}
+                <div class="current-poster-placeholder">
+                    {{if eq .Media.Type 0}}🎬{{else}}📺{{end}}
+                </div>
+                {{end}}
+                <div class="current-info">
+                    {{if .HasCurrentPoster}}
+                    <p>This is the currently displayed poster for this media. Select an alternate poster below to replace it.</p>
+                    {{else}}
+                    <p>No poster is currently set. Select a poster below to add one.</p>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+
+        <div class="alternate-posters">
+            <h2>Available Posters from TMDB</h2>
+
+            {{if .Posters}}
+            <div class="filter-controls">
+                <label>
+                    <input type="checkbox" id="showAllLanguages">
+                    Show all languages (default: English only)
+                </label>
+            </div>
+
+            <div class="posters-grid" id="postersGrid">
+                {{range .Posters}}
+                <div class="poster-card" data-language="{{.Language}}" data-poster-path="{{.FilePath}}">
+                    <img src="https://image.tmdb.org/t/p/w342{{.FilePath}}" alt="Poster option" loading="lazy">
+                    <div class="poster-card-info">
+                        <div class="poster-lang">{{if .Language}}{{.Language}}{{else}}—{{end}}</div>
+                        <div class="poster-stats">
+                            <span>{{.Width}}×{{.Height}}</span>
+                            {{if gt .VoteCount 0}}
+                            <span title="Average rating">⭐ {{printf "%.1f" .VoteAverage}}</span>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+            {{else}}
+            <div class="no-posters">
+                <p>No alternate posters available for this media.</p>
+            </div>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- Modal for poster preview -->
+    <div id="posterModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <img id="modalPosterImg" src="" alt="Poster preview" class="modal-poster">
+            <div class="modal-info">
+                <p id="modalPosterInfo"></p>
+            </div>
+            <div class="modal-actions">
+                <form id="selectPosterForm" method="POST" action="/media/{{.Media.Slug}}/save-poster">
+                    <input type="hidden" name="poster_path" id="selectedPosterPath" value="">
+                    <button type="submit" class="btn btn-primary">Select This Poster</button>
+                </form>
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('posterModal');
+        const modalImg = document.getElementById('modalPosterImg');
+        const modalInfo = document.getElementById('modalPosterInfo');
+        const selectedPosterPath = document.getElementById('selectedPosterPath');
+        const closeBtn = document.querySelector('.modal-close');
+        const showAllCheckbox = document.getElementById('showAllLanguages');
+        const posterCards = document.querySelectorAll('.poster-card');
+
+        // Filter posters by language
+        function filterPosters() {
+            const showAll = showAllCheckbox.checked;
+
+            posterCards.forEach(card => {
+                const lang = card.dataset.language;
+                if (showAll || lang === 'en' || lang === '') {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        }
+
+        // Initial filter (show English only)
+        filterPosters();
+
+        // Listen for filter changes
+        showAllCheckbox.addEventListener('change', filterPosters);
+
+        // Open modal when clicking a poster
+        posterCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const posterPath = this.dataset.posterPath;
+                const lang = this.dataset.language;
+                const img = this.querySelector('img');
+                const stats = this.querySelector('.poster-stats').textContent.trim();
+
+                // Set modal image to original quality
+                modalImg.src = 'https://image.tmdb.org/t/p/original' + posterPath;
+                selectedPosterPath.value = posterPath;
+
+                // Set modal info
+                let langText = lang ? lang.toUpperCase() : 'Unknown language';
+                modalInfo.innerHTML = `<strong>Language:</strong> ${langText}<br><strong>Details:</strong> ${stats}`;
+
+                // Show modal
+                modal.style.display = 'block';
+            });
+        });
+
+        // Close modal
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        closeBtn.addEventListener('click', closeModal);
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

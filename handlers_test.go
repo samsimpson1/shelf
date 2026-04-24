@@ -386,6 +386,7 @@ func TestFindMediaBySlug(t *testing.T) {
 	}
 }
 
+<<<<<<< HEAD
 func TestRefreshMediaList(t *testing.T) {
 	// Create a temporary test directory
 	testDir := t.TempDir()
@@ -526,5 +527,165 @@ func setupTestMediaDir(t *testing.T, baseDir string, paths []string) {
 		if err != nil {
 			t.Fatalf("Failed to create test directory %s: %v", fullPath, err)
 		}
+=======
+func TestSelectPosterHandler(t *testing.T) {
+	// Create a simple template
+	tmpl := template.Must(template.New("select_poster.html").Parse(`Poster selection page`))
+
+	// Test without TMDB client
+	mediaList := []Media{
+		{Title: "Test Film", Type: Film, Year: 2020, TMDBID: "123", Path: "/test/path", DiskCount: 1},
+	}
+
+	app := NewApp(mediaList, tmpl, "/test/media", "")
+
+	req := httptest.NewRequest(http.MethodGet, "/media/test-film-2020/select-poster", nil)
+	w := httptest.NewRecorder()
+
+	app.SelectPosterHandler(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	// Should return 503 when TMDB client is not available
+	if res.StatusCode != http.StatusServiceUnavailable {
+		t.Errorf("SelectPosterHandler() without TMDB client status = %v, want %v", res.StatusCode, http.StatusServiceUnavailable)
+	}
+}
+
+func TestSelectPosterHandlerNoTMDBID(t *testing.T) {
+	// Create a simple template
+	tmpl := template.Must(template.New("select_poster.html").Parse(`Poster selection page`))
+
+	// Media without TMDB ID
+	mediaList := []Media{
+		{Title: "Test Film", Type: Film, Year: 2020, TMDBID: "", Path: "/test/path", DiskCount: 1},
+	}
+
+	app := NewApp(mediaList, tmpl, "/test/media", "")
+	client := NewTMDBClient("test-key")
+	app.SetTMDBClient(client)
+
+	req := httptest.NewRequest(http.MethodGet, "/media/test-film-2020/select-poster", nil)
+	w := httptest.NewRecorder()
+
+	app.SelectPosterHandler(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	// Should return 400 when media has no TMDB ID
+	if res.StatusCode != http.StatusBadRequest {
+		t.Errorf("SelectPosterHandler() without TMDB ID status = %v, want %v", res.StatusCode, http.StatusBadRequest)
+	}
+}
+
+func TestSelectPosterHandlerNotFound(t *testing.T) {
+	tmpl := template.Must(template.New("select_poster.html").Parse(`Poster selection page`))
+
+	mediaList := []Media{}
+	app := NewApp(mediaList, tmpl, "/test/media", "")
+	client := NewTMDBClient("test-key")
+	app.SetTMDBClient(client)
+
+	req := httptest.NewRequest(http.MethodGet, "/media/nonexistent/select-poster", nil)
+	w := httptest.NewRecorder()
+
+	app.SelectPosterHandler(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusNotFound {
+		t.Errorf("SelectPosterHandler() for nonexistent media status = %v, want %v", res.StatusCode, http.StatusNotFound)
+	}
+}
+
+func TestSavePosterHandlerMethodNotAllowed(t *testing.T) {
+	mediaList := []Media{
+		{Title: "Test Film", Type: Film, Year: 2020, TMDBID: "123", Path: "/test/path", DiskCount: 1},
+	}
+
+	app := NewApp(mediaList, nil, "/test/media", "")
+	client := NewTMDBClient("test-key")
+	app.SetTMDBClient(client)
+
+	// Test with GET (should only accept POST)
+	req := httptest.NewRequest(http.MethodGet, "/media/test-film-2020/save-poster", nil)
+	w := httptest.NewRecorder()
+
+	app.SavePosterHandler(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusMethodNotAllowed {
+		t.Errorf("SavePosterHandler() with GET status = %v, want %v", res.StatusCode, http.StatusMethodNotAllowed)
+	}
+}
+
+func TestSavePosterHandlerNoTMDBClient(t *testing.T) {
+	mediaList := []Media{
+		{Title: "Test Film", Type: Film, Year: 2020, TMDBID: "123", Path: "/test/path", DiskCount: 1},
+	}
+
+	app := NewApp(mediaList, nil, "/test/media", "")
+
+	req := httptest.NewRequest(http.MethodPost, "/media/test-film-2020/save-poster", nil)
+	w := httptest.NewRecorder()
+
+	app.SavePosterHandler(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusServiceUnavailable {
+		t.Errorf("SavePosterHandler() without TMDB client status = %v, want %v", res.StatusCode, http.StatusServiceUnavailable)
+	}
+}
+
+func TestSavePosterHandlerMissingPosterPath(t *testing.T) {
+	mediaList := []Media{
+		{Title: "Test Film", Type: Film, Year: 2020, TMDBID: "123", Path: "/test/path", DiskCount: 1},
+	}
+
+	app := NewApp(mediaList, nil, "/test/media", "")
+	client := NewTMDBClient("test-key")
+	app.SetTMDBClient(client)
+
+	// POST without poster_path form value
+	req := httptest.NewRequest(http.MethodPost, "/media/test-film-2020/save-poster", nil)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+
+	app.SavePosterHandler(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusBadRequest {
+		t.Errorf("SavePosterHandler() without poster_path status = %v, want %v", res.StatusCode, http.StatusBadRequest)
+	}
+}
+
+func TestSavePosterHandlerNotFound(t *testing.T) {
+	mediaList := []Media{}
+	app := NewApp(mediaList, nil, "/test/media", "")
+	client := NewTMDBClient("test-key")
+	app.SetTMDBClient(client)
+
+	req := httptest.NewRequest(http.MethodPost, "/media/nonexistent/save-poster",
+		strings.NewReader("poster_path=/test.jpg"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+
+	app.SavePosterHandler(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusNotFound {
+		t.Errorf("SavePosterHandler() for nonexistent media status = %v, want %v", res.StatusCode, http.StatusNotFound)
+>>>>>>> b3b3297 (add poster selector functionality)
 	}
 }

@@ -160,6 +160,7 @@ func main() {
 		"templates/detail.html",
 		"templates/search.html",
 		"templates/confirm.html",
+		"templates/select_poster.html",
 		"templates/import_list.html",
 		"templates/import_step1.html",
 		"templates/import_step2.html",
@@ -216,6 +217,10 @@ func main() {
 			app.ConfirmTMDBHandler(w, r)
 		} else if strings.HasSuffix(path, "/set-tmdb") {
 			app.SaveTMDBHandler(w, r)
+		} else if strings.HasSuffix(path, "/select-poster") {
+			app.SelectPosterHandler(w, r)
+		} else if strings.HasSuffix(path, "/save-poster") {
+			app.SavePosterHandler(w, r)
 		} else {
 			// Default to detail handler
 			app.DetailHandler(w, r)
