@@ -37,8 +37,7 @@ func TestIntegrationScanAndServe(t *testing.T) {
 
 	// Check response
 	res := w.Result()
-	defer res.Body.Close()
-
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusOK {
 		t.Errorf("Expected status OK, got %v", res.StatusCode)
 	}
@@ -67,7 +66,7 @@ func TestIntegrationWithEmptyDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Scan empty directory
 	scanner := NewScanner(tmpDir)
@@ -93,8 +92,7 @@ func TestIntegrationWithEmptyDirectory(t *testing.T) {
 	app.IndexHandler(w, req)
 
 	res := w.Result()
-	defer res.Body.Close()
-
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusOK {
 		t.Errorf("Expected status OK, got %v", res.StatusCode)
 	}
@@ -111,7 +109,7 @@ func TestIntegrationWithCustomDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Create a film directory
 	filmDir := filepath.Join(tmpDir, "Test Film (2020) [Film]")
@@ -174,20 +172,20 @@ func TestIntegrationMixedMedia(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Create 2 films
 	for i := 1; i <= 2; i++ {
 		filmDir := filepath.Join(tmpDir, "Film "+string(rune('A'+i-1))+" (2020) [Film]")
-		os.Mkdir(filmDir, 0755)
-		os.Mkdir(filepath.Join(filmDir, "Disk [DVD]"), 0755)
+		_ = os.Mkdir(filmDir, 0755)
+		_ = os.Mkdir(filepath.Join(filmDir, "Disk [DVD]"), 0755)
 	}
 
 	// Create 2 TV shows
 	for i := 1; i <= 2; i++ {
 		tvDir := filepath.Join(tmpDir, "TV Show "+string(rune('A'+i-1))+" [TV]")
-		os.Mkdir(tvDir, 0755)
-		os.Mkdir(filepath.Join(tvDir, "Series 1 Disk 1 [DVD]"), 0755)
+		_ = os.Mkdir(tvDir, 0755)
+		_ = os.Mkdir(filepath.Join(tvDir, "Series 1 Disk 1 [DVD]"), 0755)
 	}
 
 	// Scan
@@ -263,7 +261,7 @@ func TestIntegrationEndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("HTTP request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Verify response
 	if resp.StatusCode != http.StatusOK {

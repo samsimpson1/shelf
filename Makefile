@@ -1,4 +1,4 @@
-.PHONY: test
+.PHONY: test lint run
 
 shelf:
 	go build -o shelf
@@ -6,5 +6,8 @@ shelf:
 test:
 	source env.sh && go test -v
 
-make run: shelf
+lint:
+	golangci-lint run ./...
+
+run: shelf
 	source env.sh && ./shelf

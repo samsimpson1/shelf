@@ -230,7 +230,7 @@ func TestFetchRelease(t *testing.T) {
 				},
 			},
 		}
-		json.NewEncoder(w).Encode(release)
+		_ = json.NewEncoder(w).Encode(release)
 	}))
 	defer server.Close()
 

@@ -19,7 +19,7 @@ func checkMusicBrainzAccess(t *testing.T) {
 	if err != nil {
 		t.Skipf("Cannot reach MusicBrainz API (no internet access): %v", err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	if resp.StatusCode == http.StatusForbidden {
 		t.Skip("MusicBrainz API returned Forbidden - may need different User-Agent or rate limiting")

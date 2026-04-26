@@ -1,0 +1,35 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - ineffassign
+  settings:
+    staticcheck:
+      # QF1003 suggests `switch` over `if/else if` chains, but with only two enum
+      # values (Film/TV) the if-form is more readable.
+      checks:
+        - all
+        - -QF1003
+  exclusions:
+    paths:
+      - e2e
+      - node_modules
+
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    paths:
+      - e2e
+      - node_modules

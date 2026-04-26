@@ -218,8 +218,7 @@ func TestIntegrationDownloadPoster(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// First fetch metadata to get a poster path
 	metadata, err := client.FetchMovieMetadata("550")
 	if err != nil {
@@ -277,8 +276,7 @@ func TestIntegrationSaveDescription(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Fetch metadata
 	metadata, err := client.FetchMovieMetadata("550")
 	if err != nil {
@@ -313,8 +311,7 @@ func TestIntegrationSaveGenres(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Fetch metadata
 	metadata, err := client.FetchMovieMetadata("550")
 	if err != nil {
@@ -364,8 +361,7 @@ func TestIntegrationFetchAndSaveMetadata(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Create a media item
 	media := &Media{
 		Title:     "Fight Club",
@@ -424,8 +420,7 @@ func TestIntegrationFetchAndSaveMetadataTV(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Create a TV media item
 	media := &Media{
 		Title:     "Better Call Saul",
@@ -542,8 +537,7 @@ func TestIntegrationFetchAndSaveMetadataSkipsExisting(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Create existing files
 	posterPath := filepath.Join(tmpDir, "poster.jpg")
 	err = os.WriteFile(posterPath, []byte("existing-poster-data"), 0644)
@@ -638,8 +632,7 @@ func TestIntegrationSaveTitleMovie(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Fetch movie metadata to get the title
 	metadata, err := client.FetchMovieMetadata("550")
 	if err != nil {
@@ -678,8 +671,7 @@ func TestIntegrationSaveTitleTV(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Fetch TV metadata to get the name
 	metadata, err := client.FetchTVMetadata("60059")
 	if err != nil {
@@ -718,8 +710,7 @@ func TestIntegrationFetchAndSaveMetadataWithTitle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Create a media item
 	media := &Media{
 		Title:     "Fight Club",
@@ -789,8 +780,7 @@ func TestIntegrationFetchAndSaveMetadataSkipsExistingTitle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Create existing files
 	posterPath := filepath.Join(tmpDir, "poster.jpg")
 	err = os.WriteFile(posterPath, []byte("existing-poster-data"), 0644)
