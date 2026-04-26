@@ -50,7 +50,7 @@
     </div>
 
     <div class="info">
-        <h3>Importing: {{.Session.SourceDir.Name}}</h3>
+        <h3>Importing: <strong>{{.Session.SourceDir.Name}}</strong></h3>
         <div class="meta">Size: {{printf "%.2f" .Session.SourceDir.SizeGB}} GB</div>
         {{if .Session.DetectedType}}
         <div class="meta">Detected Type: {{.Session.DetectedType}}</div>

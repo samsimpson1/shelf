@@ -72,9 +72,12 @@ test.describe('TMDB ID Management', () => {
         // Validation succeeded (real API key) - verify TMDB ID was set
         await expect(page.locator('a.btn-secondary:has-text("Change TMDB ID")')).toBeVisible();
       } else {
-        // Still on search/confirm page - verify form elements are present
+        // Either still on search/confirm page (form present) or redirected
+        // back to the detail page because the fake TMDB key rejected the ID
+        // (in which case the "Search for TMDB ID" link is still shown).
         const hasForm = await page.locator('form').count() > 0;
-        expect(hasForm).toBeTruthy();
+        const stillNoTmdb = await page.locator('a.btn-primary:has-text("Search for TMDB ID")').count() > 0;
+        expect(hasForm || stillNoTmdb).toBeTruthy();
       }
     }
   });

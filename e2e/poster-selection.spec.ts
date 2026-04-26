@@ -99,7 +99,7 @@ test.describe('Alternate Poster Selection', () => {
   test('should open modal when clicking a poster card', async ({ page }) => {
     await page.goto('/media/the-matrix-1999/select-poster');
 
-    const posterCards = page.locator('.poster-card');
+    const posterCards = page.locator('.poster-card:not(.hidden)');
     const posterCount = await posterCards.count();
 
     if (posterCount > 0) {
@@ -124,7 +124,7 @@ test.describe('Alternate Poster Selection', () => {
   test('should close modal when clicking Cancel', async ({ page }) => {
     await page.goto('/media/the-matrix-1999/select-poster');
 
-    const posterCards = page.locator('.poster-card');
+    const posterCards = page.locator('.poster-card:not(.hidden)');
     const posterCount = await posterCards.count();
 
     if (posterCount > 0) {
@@ -144,7 +144,7 @@ test.describe('Alternate Poster Selection', () => {
   test('should close modal when clicking close button', async ({ page }) => {
     await page.goto('/media/the-matrix-1999/select-poster');
 
-    const posterCards = page.locator('.poster-card');
+    const posterCards = page.locator('.poster-card:not(.hidden)');
     const posterCount = await posterCards.count();
 
     if (posterCount > 0) {
@@ -167,7 +167,7 @@ test.describe('Alternate Poster Selection', () => {
   test('should close modal when pressing Escape key', async ({ page }) => {
     await page.goto('/media/the-matrix-1999/select-poster');
 
-    const posterCards = page.locator('.poster-card');
+    const posterCards = page.locator('.poster-card:not(.hidden)');
     const posterCount = await posterCards.count();
 
     if (posterCount > 0) {
@@ -238,7 +238,7 @@ test.describe('Alternate Poster Selection', () => {
 
     await page.goto('/media/the-matrix-1999/select-poster');
 
-    const posterCards = page.locator('.poster-card');
+    const posterCards = page.locator('.poster-card:not(.hidden)');
     const posterCount = await posterCards.count();
 
     if (posterCount > 0) {

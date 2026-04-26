@@ -173,6 +173,11 @@ function createPosterImage(filePath: string): void {
 function createMetadataFiles(mediaFixture: MediaFixture): void {
   const mediaDir = `media/${mediaFixture.name}`;
 
+  for (const f of ['tmdb.txt', 'title.txt', 'description.txt', 'genre.txt']) {
+    const p = path.join(fixturesDir, mediaDir, f);
+    if (fs.existsSync(p)) fs.unlinkSync(p);
+  }
+
   if (mediaFixture.tmdbId) {
     createTextFile(`${mediaDir}/tmdb.txt`, mediaFixture.tmdbId);
   }
