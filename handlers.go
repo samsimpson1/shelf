@@ -194,7 +194,7 @@ func (app *App) IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := tmpl.ExecuteTemplate(w, "index.html", data)
 	if err != nil {
-		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Error rendering template", err)
 		return
 	}
 }
@@ -277,8 +277,7 @@ func (app *App) DetailHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := tmpl.ExecuteTemplate(w, "detail.html", data)
 	if err != nil {
-		log.Printf("Error rendering detail template: %v", err)
-		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Error rendering template", err)
 		return
 	}
 }
@@ -302,7 +301,7 @@ func (app *App) findMediaBySlug(slug string) *Media {
 func (app *App) SearchTMDBHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if TMDB client is available
 	if app.tmdbClient == nil {
-		http.Error(w, "TMDB API is not configured", http.StatusServiceUnavailable)
+		writeError(w, http.StatusServiceUnavailable, "TMDB API is not configured", nil)
 		return
 	}
 
@@ -323,7 +322,7 @@ func (app *App) SearchTMDBHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Music does not support TMDB integration
 	if media.Type == Music {
-		http.Error(w, "TMDB search is not supported for Music media type", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "TMDB search is not supported for Music media type", nil)
 		return
 	}
 
@@ -375,7 +374,8 @@ func (app *App) SearchTMDBHandler(w http.ResponseWriter, r *http.Request) {
 	// Prepare error message
 	var errorMsg string
 	if searchErr != nil {
-		errorMsg = fmt.Sprintf("Search error: %v", searchErr)
+		log.Printf("TMDB search failed for %q: %v", query, searchErr)
+		errorMsg = "Search error: unable to reach TMDB"
 	}
 
 	data := struct {
@@ -394,8 +394,7 @@ func (app *App) SearchTMDBHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := tmpl.ExecuteTemplate(w, "search.html", data)
 	if err != nil {
-		log.Printf("Error rendering search template: %v", err)
-		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Error rendering template", err)
 		return
 	}
 }
@@ -404,7 +403,7 @@ func (app *App) SearchTMDBHandler(w http.ResponseWriter, r *http.Request) {
 func (app *App) ConfirmTMDBHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if TMDB client is available
 	if app.tmdbClient == nil {
-		http.Error(w, "TMDB API is not configured", http.StatusServiceUnavailable)
+		writeError(w, http.StatusServiceUnavailable, "TMDB API is not configured", nil)
 		return
 	}
 
@@ -425,14 +424,14 @@ func (app *App) ConfirmTMDBHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Music does not support TMDB integration
 	if media.Type == Music {
-		http.Error(w, "TMDB confirmation is not supported for Music media type", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "TMDB confirmation is not supported for Music media type", nil)
 		return
 	}
 
 	// Get TMDB ID from query parameter
 	tmdbID := r.URL.Query().Get("id")
 	if tmdbID == "" {
-		http.Error(w, "TMDB ID is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "TMDB ID is required", nil)
 		return
 	}
 
@@ -480,7 +479,8 @@ func (app *App) ConfirmTMDBHandler(w http.ResponseWriter, r *http.Request) {
 	// Prepare error message
 	var errorMsg string
 	if fetchErr != nil {
-		errorMsg = fmt.Sprintf("Failed to fetch TMDB details: %v", fetchErr)
+		log.Printf("TMDB fetch failed for media %q: %v", media.Title, fetchErr)
+		errorMsg = "Failed to fetch TMDB details"
 	}
 
 	data := struct {
@@ -503,8 +503,7 @@ func (app *App) ConfirmTMDBHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := tmpl.ExecuteTemplate(w, "confirm.html", data)
 	if err != nil {
-		log.Printf("Error rendering confirm template: %v", err)
-		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Error rendering template", err)
 		return
 	}
 }
@@ -513,7 +512,7 @@ func (app *App) ConfirmTMDBHandler(w http.ResponseWriter, r *http.Request) {
 func (app *App) SaveTMDBHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if TMDB client is available
 	if app.tmdbClient == nil {
-		http.Error(w, "TMDB API is not configured", http.StatusServiceUnavailable)
+		writeError(w, http.StatusServiceUnavailable, "TMDB API is not configured", nil)
 		return
 	}
 
@@ -532,37 +531,35 @@ func (app *App) SaveTMDBHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Music does not support TMDB integration
 	if media.Type == Music {
-		http.Error(w, "Setting TMDB ID is not supported for Music media type", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Setting TMDB ID is not supported for Music media type", nil)
 		return
 	}
 
 	// Parse form data
 	err := r.ParseForm()
 	if err != nil {
-		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Failed to parse form", err)
 		return
 	}
 
 	// Get TMDB ID from form
 	tmdbID := r.FormValue("tmdb_id")
 	if tmdbID == "" {
-		http.Error(w, "TMDB ID is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "TMDB ID is required", nil)
 		return
 	}
 
 	// Validate TMDB ID
 	err = app.tmdbClient.ValidateTMDBID(tmdbID, media.Type)
 	if err != nil {
-		log.Printf("Invalid TMDB ID %s for %s: %v", tmdbID, media.Title, err)
-		http.Error(w, fmt.Sprintf("Invalid TMDB ID: %v", err), http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Invalid TMDB ID", err)
 		return
 	}
 
 	// Write TMDB ID to file
 	err = WriteTMDBID(tmdbID, media.Path)
 	if err != nil {
-		log.Printf("Failed to write TMDB ID for %s: %v", media.Title, err)
-		http.Error(w, "Failed to save TMDB ID", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Failed to save TMDB ID", err)
 		return
 	}
 
@@ -589,7 +586,7 @@ func (app *App) SaveTMDBHandler(w http.ResponseWriter, r *http.Request) {
 func (app *App) SelectPosterHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if TMDB client is available
 	if app.tmdbClient == nil {
-		http.Error(w, "TMDB API is not configured", http.StatusServiceUnavailable)
+		writeError(w, http.StatusServiceUnavailable, "TMDB API is not configured", nil)
 		return
 	}
 
@@ -610,15 +607,14 @@ func (app *App) SelectPosterHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check if media has TMDB ID
 	if media.TMDBID == "" {
-		http.Error(w, "Media does not have a TMDB ID", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Media does not have a TMDB ID", nil)
 		return
 	}
 
 	// Fetch poster images from TMDB
 	posters, err := app.tmdbClient.FetchPosterImages(media.TMDBID, media.Type)
 	if err != nil {
-		log.Printf("Failed to fetch poster images for %s: %v", media.Title, err)
-		http.Error(w, "Failed to fetch poster images from TMDB", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Failed to fetch poster images from TMDB", err)
 		return
 	}
 
@@ -639,8 +635,7 @@ func (app *App) SelectPosterHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = tmpl.ExecuteTemplate(w, "select_poster.html", data)
 	if err != nil {
-		log.Printf("Error rendering select_poster template: %v", err)
-		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Error rendering template", err)
 		return
 	}
 }
@@ -649,7 +644,7 @@ func (app *App) SelectPosterHandler(w http.ResponseWriter, r *http.Request) {
 func (app *App) SavePosterHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if TMDB client is available
 	if app.tmdbClient == nil {
-		http.Error(w, "TMDB API is not configured", http.StatusServiceUnavailable)
+		writeError(w, http.StatusServiceUnavailable, "TMDB API is not configured", nil)
 		return
 	}
 
@@ -669,14 +664,14 @@ func (app *App) SavePosterHandler(w http.ResponseWriter, r *http.Request) {
 	// Parse form data
 	err := r.ParseForm()
 	if err != nil {
-		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Failed to parse form", err)
 		return
 	}
 
 	// Get poster path from form
 	posterPath := r.FormValue("poster_path")
 	if posterPath == "" {
-		http.Error(w, "Poster path is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Poster path is required", nil)
 		return
 	}
 
@@ -690,8 +685,7 @@ func (app *App) SavePosterHandler(w http.ResponseWriter, r *http.Request) {
 	// Download the new poster
 	err = app.tmdbClient.DownloadPoster(posterPath, media.Path)
 	if err != nil {
-		log.Printf("Failed to download new poster for %s: %v", media.Title, err)
-		http.Error(w, "Failed to download poster", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Failed to download poster", err)
 		return
 	}
 

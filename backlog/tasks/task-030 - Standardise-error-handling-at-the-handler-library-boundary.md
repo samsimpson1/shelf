@@ -1,7 +1,7 @@
 ---
 id: TASK-030
 title: Standardise error handling at the handler/library boundary
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-24 20:49'
 labels:
@@ -26,10 +26,10 @@ Coordinates with Task 5 (Media loader) and Task 10 (golangci-lint `errcheck`).
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Handlers never render raw `err.Error()` strings into HTTP response bodies
-- [ ] #2 Scanner error paths either return wrapped errors or log with enough context that the caller understands the partial-failure state
-- [ ] #3 Silently-zero-returning loader methods (if still present after Task 5) return wrapped errors instead
-- [ ] #4 A `writeError` helper is used at every handler error site
-- [ ] #5 Handler tests assert that user-facing error bodies do not leak internal paths or error chain detail
-- [ ] #6 `go test ./...` passes
+- [x] #1 Handlers never render raw `err.Error()` strings into HTTP response bodies
+- [x] #2 Scanner error paths either return wrapped errors or log with enough context that the caller understands the partial-failure state
+- [x] #3 Silently-zero-returning loader methods (if still present after Task 5) return wrapped errors instead
+- [x] #4 A `writeError` helper is used at every handler error site
+- [x] #5 Handler tests assert that user-facing error bodies do not leak internal paths or error chain detail
+- [x] #6 `go test ./...` passes
 <!-- AC:END -->

@@ -135,7 +135,7 @@ func (s *Scanner) parseFilm(dirName, dirPath string) (Media, bool) {
 	// Fetch metadata if TMDB client is configured
 	if s.tmdbClient != nil && media.TMDBID != "" {
 		if err := s.tmdbClient.FetchAndSaveMetadata(&media); err != nil {
-			log.Printf("Warning: Failed to fetch metadata for %s: %v", media.Title, err)
+			log.Printf("Warning: continuing without TMDB metadata for film %q (path=%s, tmdb_id=%s): %v", media.Title, dirPath, media.TMDBID, err)
 		}
 	}
 
@@ -173,7 +173,7 @@ func (s *Scanner) parseTV(dirName, dirPath string) (Media, bool) {
 	// Fetch metadata if TMDB client is configured
 	if s.tmdbClient != nil && media.TMDBID != "" {
 		if err := s.tmdbClient.FetchAndSaveMetadata(&media); err != nil {
-			log.Printf("Warning: Failed to fetch metadata for %s: %v", media.Title, err)
+			log.Printf("Warning: continuing without TMDB metadata for TV show %q (path=%s, tmdb_id=%s): %v", media.Title, dirPath, media.TMDBID, err)
 		}
 	}
 
@@ -211,7 +211,7 @@ func (s *Scanner) parseMusic(dirName, dirPath string) (Media, bool) {
 	// Fetch track list if MusicBrainz client is configured
 	if s.musicBrainzClient != nil && media.MusicBrainzID != "" {
 		if err := s.musicBrainzClient.FetchAndSaveTrackList(&media); err != nil {
-			log.Printf("Warning: Failed to fetch track list for %s: %v", media.Title, err)
+			log.Printf("Warning: continuing without MusicBrainz track list for %q (path=%s, mbid=%s): %v", media.Title, dirPath, media.MusicBrainzID, err)
 		}
 	}
 

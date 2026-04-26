@@ -57,7 +57,7 @@ func (s *ImportSessionStore) Delete(id string) {
 func (app *App) ImportListHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if import is enabled
 	if app.importScanner == nil {
-		http.Error(w, "Import functionality is not configured (IMPORT_DIR not set)", http.StatusServiceUnavailable)
+		writeError(w, http.StatusServiceUnavailable, "Import functionality is not configured (IMPORT_DIR not set)", nil)
 		return
 	}
 
@@ -66,8 +66,7 @@ func (app *App) ImportListHandler(w http.ResponseWriter, r *http.Request) {
 	// Scan import directory
 	imports, err := app.importScanner.Scan()
 	if err != nil {
-		log.Printf("Error scanning import directory: %v", err)
-		http.Error(w, "Failed to scan import directory", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Failed to scan import directory", err)
 		return
 	}
 
@@ -79,8 +78,7 @@ func (app *App) ImportListHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = tmpl.ExecuteTemplate(w, "import_list.html", data)
 	if err != nil {
-		log.Printf("Error rendering import_list template: %v", err)
-		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Error rendering template", err)
 		return
 	}
 }
@@ -89,21 +87,21 @@ func (app *App) ImportListHandler(w http.ResponseWriter, r *http.Request) {
 func (app *App) ImportStartHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if import is enabled
 	if app.importScanner == nil {
-		http.Error(w, "Import functionality is not configured", http.StatusServiceUnavailable)
+		writeError(w, http.StatusServiceUnavailable, "Import functionality is not configured", nil)
 		return
 	}
 
 	// Get directory name from query parameter
 	dirName := r.URL.Query().Get("dir")
 	if dirName == "" {
-		http.Error(w, "Directory name is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Directory name is required", nil)
 		return
 	}
 
 	// Scan to find the directory
 	imports, err := app.importScanner.Scan()
 	if err != nil {
-		http.Error(w, "Failed to scan import directory", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Failed to scan import directory", err)
 		return
 	}
 
@@ -140,13 +138,13 @@ func (app *App) ImportStartHandler(w http.ResponseWriter, r *http.Request) {
 func (app *App) ImportStep1Handler(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.URL.Query().Get("session")
 	if sessionID == "" {
-		http.Error(w, "Session ID is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Session ID is required", nil)
 		return
 	}
 
 	session, ok := app.importSessions.Get(sessionID)
 	if !ok {
-		http.Error(w, "Invalid session", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "Invalid session", nil)
 		return
 	}
 
@@ -154,7 +152,7 @@ func (app *App) ImportStep1Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		err := r.ParseForm()
 		if err != nil {
-			http.Error(w, "Failed to parse form", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "Failed to parse form", err)
 			return
 		}
 
@@ -166,7 +164,7 @@ func (app *App) ImportStep1Handler(w http.ResponseWriter, r *http.Request) {
 		} else if mediaKindStr == "music" {
 			session.MediaKind = Music
 		} else {
-			http.Error(w, "Invalid media kind", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "Invalid media kind", nil)
 			return
 		}
 
@@ -187,8 +185,7 @@ func (app *App) ImportStep1Handler(w http.ResponseWriter, r *http.Request) {
 
 	err := tmpl.ExecuteTemplate(w, "import_step1.html", data)
 	if err != nil {
-		log.Printf("Error rendering import_step1 template: %v", err)
-		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Error rendering template", err)
 		return
 	}
 }
@@ -197,13 +194,13 @@ func (app *App) ImportStep1Handler(w http.ResponseWriter, r *http.Request) {
 func (app *App) ImportStep2Handler(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.URL.Query().Get("session")
 	if sessionID == "" {
-		http.Error(w, "Session ID is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Session ID is required", nil)
 		return
 	}
 
 	session, ok := app.importSessions.Get(sessionID)
 	if !ok {
-		http.Error(w, "Invalid session", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "Invalid session", nil)
 		return
 	}
 
@@ -211,7 +208,7 @@ func (app *App) ImportStep2Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		err := r.ParseForm()
 		if err != nil {
-			http.Error(w, "Failed to parse form", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "Failed to parse form", err)
 			return
 		}
 
@@ -225,14 +222,14 @@ func (app *App) ImportStep2Handler(w http.ResponseWriter, r *http.Request) {
 			session.AddToExisting = true
 			existingSlug := r.FormValue("existing_media")
 			if existingSlug == "" {
-				http.Error(w, "Existing media selection is required", http.StatusBadRequest)
+				writeError(w, http.StatusBadRequest, "Existing media selection is required", nil)
 				return
 			}
 
 			// Find media by slug
 			media := app.findMediaBySlug(existingSlug)
 			if media == nil {
-				http.Error(w, "Selected media not found", http.StatusNotFound)
+				writeError(w, http.StatusNotFound, "Selected media not found", nil)
 				return
 			}
 
@@ -241,7 +238,7 @@ func (app *App) ImportStep2Handler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/import/step4?session="+url.QueryEscape(sessionID), http.StatusSeeOther)
 			return
 		} else {
-			http.Error(w, "Invalid action", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "Invalid action", nil)
 			return
 		}
 	}
@@ -270,8 +267,7 @@ func (app *App) ImportStep2Handler(w http.ResponseWriter, r *http.Request) {
 
 	err := tmpl.ExecuteTemplate(w, "import_step2.html", data)
 	if err != nil {
-		log.Printf("Error rendering import_step2 template: %v", err)
-		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Error rendering template", err)
 		return
 	}
 }
@@ -280,13 +276,13 @@ func (app *App) ImportStep2Handler(w http.ResponseWriter, r *http.Request) {
 func (app *App) ImportStep3Handler(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.URL.Query().Get("session")
 	if sessionID == "" {
-		http.Error(w, "Session ID is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Session ID is required", nil)
 		return
 	}
 
 	session, ok := app.importSessions.Get(sessionID)
 	if !ok {
-		http.Error(w, "Invalid session", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "Invalid session", nil)
 		return
 	}
 
@@ -342,7 +338,8 @@ func (app *App) ImportStep3Handler(w http.ResponseWriter, r *http.Request) {
 	// Prepare error message
 	var errorMsg string
 	if searchErr != nil {
-		errorMsg = fmt.Sprintf("Search error: %v", searchErr)
+		log.Printf("TMDB search failed for %q (kind=%s): %v", query, session.MediaKind, searchErr)
+		errorMsg = "Search error: unable to reach TMDB"
 	}
 
 	tmpl := app.getTemplates()
@@ -367,8 +364,7 @@ func (app *App) ImportStep3Handler(w http.ResponseWriter, r *http.Request) {
 
 	err := tmpl.ExecuteTemplate(w, "import_step3.html", data)
 	if err != nil {
-		log.Printf("Error rendering import_step3 template: %v", err)
-		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Error rendering template", err)
 		return
 	}
 }
@@ -379,25 +375,25 @@ func (app *App) ImportStep3ConfirmHandler(w http.ResponseWriter, r *http.Request
 	tmdbID := r.URL.Query().Get("id")
 
 	if sessionID == "" || tmdbID == "" {
-		http.Error(w, "Session ID and TMDB ID are required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Session ID and TMDB ID are required", nil)
 		return
 	}
 
 	session, ok := app.importSessions.Get(sessionID)
 	if !ok {
-		http.Error(w, "Invalid session", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "Invalid session", nil)
 		return
 	}
 
 	// Fetch metadata from TMDB or MusicBrainz
 	if session.MediaKind == Film {
 		if app.tmdbClient == nil {
-			http.Error(w, "TMDB API is not configured", http.StatusServiceUnavailable)
+			writeError(w, http.StatusServiceUnavailable, "TMDB API is not configured", nil)
 			return
 		}
 		movie, err := app.tmdbClient.FetchMovieMetadata(tmdbID)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Failed to fetch movie metadata: %v", err), http.StatusInternalServerError)
+			writeError(w, http.StatusInternalServerError, "Failed to fetch movie metadata", err)
 			return
 		}
 		session.TMDBID = tmdbID
@@ -416,12 +412,12 @@ func (app *App) ImportStep3ConfirmHandler(w http.ResponseWriter, r *http.Request
 		}
 	} else if session.MediaKind == TV {
 		if app.tmdbClient == nil {
-			http.Error(w, "TMDB API is not configured", http.StatusServiceUnavailable)
+			writeError(w, http.StatusServiceUnavailable, "TMDB API is not configured", nil)
 			return
 		}
 		tv, err := app.tmdbClient.FetchTVMetadata(tmdbID)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Failed to fetch TV metadata: %v", err), http.StatusInternalServerError)
+			writeError(w, http.StatusInternalServerError, "Failed to fetch TV metadata", err)
 			return
 		}
 		session.TMDBID = tmdbID
@@ -434,14 +430,14 @@ func (app *App) ImportStep3ConfirmHandler(w http.ResponseWriter, r *http.Request
 		}
 	} else if session.MediaKind == Music {
 		if app.musicBrainzClient == nil {
-			http.Error(w, "MusicBrainz client is not configured", http.StatusServiceUnavailable)
+			writeError(w, http.StatusServiceUnavailable, "MusicBrainz client is not configured", nil)
 			return
 		}
 		// For Music, the ID passed is the MusicBrainz Release ID
 		// We fetch the release to get details
 		release, err := app.musicBrainzClient.FetchRelease(tmdbID)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Failed to fetch release metadata: %v", err), http.StatusInternalServerError)
+			writeError(w, http.StatusInternalServerError, "Failed to fetch release metadata", err)
 			return
 		}
 		session.MusicBrainzID = tmdbID
@@ -458,13 +454,13 @@ func (app *App) ImportStep3ConfirmHandler(w http.ResponseWriter, r *http.Request
 func (app *App) ImportStep3ManualHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.URL.Query().Get("session")
 	if sessionID == "" {
-		http.Error(w, "Session ID is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Session ID is required", nil)
 		return
 	}
 
 	session, ok := app.importSessions.Get(sessionID)
 	if !ok {
-		http.Error(w, "Invalid session", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "Invalid session", nil)
 		return
 	}
 
@@ -472,13 +468,13 @@ func (app *App) ImportStep3ManualHandler(w http.ResponseWriter, r *http.Request)
 	if r.Method == http.MethodPost {
 		err := r.ParseForm()
 		if err != nil {
-			http.Error(w, "Failed to parse form", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "Failed to parse form", err)
 			return
 		}
 
 		title := r.FormValue("title")
 		if title == "" {
-			http.Error(w, "Title is required", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "Title is required", nil)
 			return
 		}
 		session.Title = title
@@ -488,7 +484,7 @@ func (app *App) ImportStep3ManualHandler(w http.ResponseWriter, r *http.Request)
 			yearStr := r.FormValue("year")
 			year, err := strconv.Atoi(yearStr)
 			if err != nil || year <= 0 {
-				http.Error(w, "Valid year is required for films", http.StatusBadRequest)
+				writeError(w, http.StatusBadRequest, "Valid year is required for films", nil)
 				return
 			}
 			session.Year = year
@@ -511,8 +507,7 @@ func (app *App) ImportStep3ManualHandler(w http.ResponseWriter, r *http.Request)
 
 	err := tmpl.ExecuteTemplate(w, "import_step3_manual.html", data)
 	if err != nil {
-		log.Printf("Error rendering import_step3_manual template: %v", err)
-		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Error rendering template", err)
 		return
 	}
 }
@@ -521,13 +516,13 @@ func (app *App) ImportStep3ManualHandler(w http.ResponseWriter, r *http.Request)
 func (app *App) ImportStep4Handler(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.URL.Query().Get("session")
 	if sessionID == "" {
-		http.Error(w, "Session ID is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Session ID is required", nil)
 		return
 	}
 
 	session, ok := app.importSessions.Get(sessionID)
 	if !ok {
-		http.Error(w, "Invalid session", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "Invalid session", nil)
 		return
 	}
 
@@ -535,7 +530,7 @@ func (app *App) ImportStep4Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		err := r.ParseForm()
 		if err != nil {
-			http.Error(w, "Failed to parse form", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "Failed to parse form", err)
 			return
 		}
 
@@ -544,7 +539,7 @@ func (app *App) ImportStep4Handler(w http.ResponseWriter, r *http.Request) {
 			seriesStr := r.FormValue("series_num")
 			series, err := strconv.Atoi(seriesStr)
 			if err != nil || series <= 0 {
-				http.Error(w, "Valid series number is required for TV shows", http.StatusBadRequest)
+				writeError(w, http.StatusBadRequest, "Valid series number is required for TV shows", nil)
 				return
 			}
 			session.SeriesNum = series
@@ -552,7 +547,7 @@ func (app *App) ImportStep4Handler(w http.ResponseWriter, r *http.Request) {
 			diskStr := r.FormValue("disk_num")
 			disk, err := strconv.Atoi(diskStr)
 			if err != nil || disk <= 0 {
-				http.Error(w, "Valid disk number is required for TV shows", http.StatusBadRequest)
+				writeError(w, http.StatusBadRequest, "Valid disk number is required for TV shows", nil)
 				return
 			}
 			session.DiskNum = disk
@@ -573,13 +568,13 @@ func (app *App) ImportStep4Handler(w http.ResponseWriter, r *http.Request) {
 		case "custom":
 			customType := r.FormValue("disk_type_custom")
 			if customType == "" {
-				http.Error(w, "Custom disk type text is required", http.StatusBadRequest)
+				writeError(w, http.StatusBadRequest, "Custom disk type text is required", nil)
 				return
 			}
 			session.DiskType = DiskTypeCustom
 			session.DiskTypeCustom = customType
 		default:
-			http.Error(w, "Invalid disk type", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "Invalid disk type", nil)
 			return
 		}
 
@@ -600,8 +595,7 @@ func (app *App) ImportStep4Handler(w http.ResponseWriter, r *http.Request) {
 
 	err := tmpl.ExecuteTemplate(w, "import_step4.html", data)
 	if err != nil {
-		log.Printf("Error rendering import_step4 template: %v", err)
-		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Error rendering template", err)
 		return
 	}
 }
@@ -610,13 +604,13 @@ func (app *App) ImportStep4Handler(w http.ResponseWriter, r *http.Request) {
 func (app *App) ImportConfirmHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.URL.Query().Get("session")
 	if sessionID == "" {
-		http.Error(w, "Session ID is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Session ID is required", nil)
 		return
 	}
 
 	session, ok := app.importSessions.Get(sessionID)
 	if !ok {
-		http.Error(w, "Invalid session", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "Invalid session", nil)
 		return
 	}
 
@@ -662,8 +656,7 @@ func (app *App) ImportConfirmHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := tmpl.ExecuteTemplate(w, "import_confirm.html", data)
 	if err != nil {
-		log.Printf("Error rendering import_confirm template: %v", err)
-		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Error rendering template", err)
 		return
 	}
 }
@@ -672,27 +665,26 @@ func (app *App) ImportConfirmHandler(w http.ResponseWriter, r *http.Request) {
 func (app *App) ImportExecuteHandler(w http.ResponseWriter, r *http.Request) {
 	// Only accept POST requests
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		writeError(w, http.StatusMethodNotAllowed, "Method not allowed", nil)
 		return
 	}
 
 	sessionID := r.FormValue("session")
 	if sessionID == "" {
-		http.Error(w, "Session ID is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "Session ID is required", nil)
 		return
 	}
 
 	session, ok := app.importSessions.Get(sessionID)
 	if !ok {
-		http.Error(w, "Invalid session", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "Invalid session", nil)
 		return
 	}
 
 	// Execute the import
 	err := ExecuteImport(session, app.mediaDir)
 	if err != nil {
-		log.Printf("Import failed: %v", err)
-		http.Error(w, fmt.Sprintf("Import failed: %v", err), http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Import failed", err)
 		return
 	}
 
@@ -761,8 +753,7 @@ func (app *App) ImportSuccessHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := tmpl.ExecuteTemplate(w, "import_success.html", data)
 	if err != nil {
-		log.Printf("Error rendering import_success template: %v", err)
-		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "Error rendering template", err)
 		return
 	}
 }
