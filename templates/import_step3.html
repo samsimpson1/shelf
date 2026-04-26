@@ -85,12 +85,12 @@
         <h3 style="margin-bottom: 15px;">Search Results</h3>
         {{range .Results}}
         <div class="result">
-            {{if .PosterPath}}
+            {{if eq $.Session.MediaKind 2}}
+            <div style="width: 92px; height: 138px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 48px;">🎵</div>
+            {{else if .PosterPath}}
             <img src="https://image.tmdb.org/t/p/w92{{.PosterPath}}" alt="{{.GetTitle}}">
             {{else}}
-            <div style="width: 92px; height: 138px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 48px;">
-                {{if eq $.Session.MediaKind 2}}🎵{{else}}📽️{{end}}
-            </div>
+            <div style="width: 92px; height: 138px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 48px;">📽️</div>
             {{end}}
             <div class="result-info">
                 {{if eq $.Session.MediaKind 2}}
