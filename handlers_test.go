@@ -106,7 +106,7 @@ func TestIndexHandler(t *testing.T) {
 			app.IndexHandler(w, req)
 
 			res := w.Result()
-			defer res.Body.Close()
+			defer func() { _ = res.Body.Close() }()
 
 			if res.StatusCode != tt.expectedStatus {
 				t.Errorf("IndexHandler() status = %v, want %v", res.StatusCode, tt.expectedStatus)
@@ -310,7 +310,7 @@ func TestDetailHandler(t *testing.T) {
 			app.DetailHandler(w, req)
 
 			res := w.Result()
-			defer res.Body.Close()
+			defer func() { _ = res.Body.Close() }()
 
 			if res.StatusCode != tt.expectedStatus {
 				t.Errorf("DetailHandler() status = %v, want %v", res.StatusCode, tt.expectedStatus)
@@ -548,7 +548,7 @@ func TestSelectPosterHandler(t *testing.T) {
 	app.SelectPosterHandler(w, req)
 
 	res := w.Result()
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	// Should return 503 when TMDB client is not available
 	if res.StatusCode != http.StatusServiceUnavailable {
@@ -576,7 +576,7 @@ func TestSelectPosterHandlerNoTMDBID(t *testing.T) {
 	app.SelectPosterHandler(w, req)
 
 	res := w.Result()
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	// Should return 400 when media has no TMDB ID
 	if res.StatusCode != http.StatusBadRequest {
@@ -599,7 +599,7 @@ func TestSelectPosterHandlerNotFound(t *testing.T) {
 	app.SelectPosterHandler(w, req)
 
 	res := w.Result()
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	if res.StatusCode != http.StatusNotFound {
 		t.Errorf("SelectPosterHandler() for nonexistent media status = %v, want %v", res.StatusCode, http.StatusNotFound)
@@ -625,7 +625,7 @@ func TestSavePosterHandlerMethodNotAllowed(t *testing.T) {
 	mux.ServeHTTP(w, req)
 
 	res := w.Result()
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	if res.StatusCode != http.StatusMethodNotAllowed {
 		t.Errorf("save-poster GET status = %v, want %v", res.StatusCode, http.StatusMethodNotAllowed)
@@ -646,7 +646,7 @@ func TestSavePosterHandlerNoTMDBClient(t *testing.T) {
 	app.SavePosterHandler(w, req)
 
 	res := w.Result()
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	if res.StatusCode != http.StatusServiceUnavailable {
 		t.Errorf("SavePosterHandler() without TMDB client status = %v, want %v", res.StatusCode, http.StatusServiceUnavailable)
@@ -671,7 +671,7 @@ func TestSavePosterHandlerMissingPosterPath(t *testing.T) {
 	app.SavePosterHandler(w, req)
 
 	res := w.Result()
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	if res.StatusCode != http.StatusBadRequest {
 		t.Errorf("SavePosterHandler() without poster_path status = %v, want %v", res.StatusCode, http.StatusBadRequest)
@@ -693,7 +693,7 @@ func TestSavePosterHandlerNotFound(t *testing.T) {
 	app.SavePosterHandler(w, req)
 
 	res := w.Result()
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	if res.StatusCode != http.StatusNotFound {
 		t.Errorf("SavePosterHandler() for nonexistent media status = %v, want %v", res.StatusCode, http.StatusNotFound)

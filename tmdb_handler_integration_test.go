@@ -23,7 +23,7 @@ func mockTMDBServer() *httptest.Server {
 			case "550":
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(`{
+				_, _ = w.Write([]byte(`{
 					"id": 550,
 					"title": "Fight Club",
 					"release_date": "1999-10-15",
@@ -34,7 +34,7 @@ func mockTMDBServer() *httptest.Server {
 			case "755898":
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(`{
+				_, _ = w.Write([]byte(`{
 					"id": 755898,
 					"title": "War of the Worlds",
 					"release_date": "2025-01-01",
@@ -44,7 +44,7 @@ func mockTMDBServer() *httptest.Server {
 				}`))
 			case "999999":
 				w.WriteHeader(http.StatusNotFound)
-				w.Write([]byte(`{"status_code": 34, "status_message": "The resource you requested could not be found."}`))
+				_, _ = w.Write([]byte(`{"status_code": 34, "status_message": "The resource you requested could not be found."}`))
 			default:
 				w.WriteHeader(http.StatusNotFound)
 			}
@@ -60,7 +60,7 @@ func mockTMDBServer() *httptest.Server {
 			case "60059":
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(`{
+				_, _ = w.Write([]byte(`{
 					"id": 60059,
 					"name": "Better Call Saul",
 					"first_air_date": "2015-02-08",
@@ -70,7 +70,7 @@ func mockTMDBServer() *httptest.Server {
 				}`))
 			case "999999":
 				w.WriteHeader(http.StatusNotFound)
-				w.Write([]byte(`{"status_code": 34, "status_message": "The resource you requested could not be found."}`))
+				_, _ = w.Write([]byte(`{"status_code": 34, "status_message": "The resource you requested could not be found."}`))
 			default:
 				w.WriteHeader(http.StatusNotFound)
 			}
@@ -86,7 +86,7 @@ func mockTMDBServer() *httptest.Server {
 				if year == "1999" || year == "" {
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
-					w.Write([]byte(`{
+					_, _ = w.Write([]byte(`{
 						"results": [
 							{
 								"id": 550,
@@ -101,12 +101,12 @@ func mockTMDBServer() *httptest.Server {
 				} else {
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
-					w.Write([]byte(`{"results": []}`))
+					_, _ = w.Write([]byte(`{"results": []}`))
 				}
 			} else if query == "War of the Worlds" {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(`{
+				_, _ = w.Write([]byte(`{
 					"results": [
 						{
 							"id": 755898,
@@ -121,7 +121,7 @@ func mockTMDBServer() *httptest.Server {
 			} else {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(`{"results": []}`))
+				_, _ = w.Write([]byte(`{"results": []}`))
 			}
 			return
 		}
@@ -133,7 +133,7 @@ func mockTMDBServer() *httptest.Server {
 			if query == "Better Call Saul" {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(`{
+				_, _ = w.Write([]byte(`{
 					"results": [
 						{
 							"id": 60059,
@@ -148,7 +148,7 @@ func mockTMDBServer() *httptest.Server {
 			} else {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(`{"results": []}`))
+				_, _ = w.Write([]byte(`{"results": []}`))
 			}
 			return
 		}
@@ -157,7 +157,7 @@ func mockTMDBServer() *httptest.Server {
 		if strings.HasPrefix(r.URL.Path, "/t/p/original/") {
 			w.Header().Set("Content-Type", "image/jpeg")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("fake-image-data"))
+			_, _ = w.Write([]byte("fake-image-data"))
 			return
 		}
 

@@ -73,8 +73,8 @@ func TestImportScannerNonexistentDir(t *testing.T) {
 // TestDetectDiskType tests disk type detection
 func TestDetectDiskType(t *testing.T) {
 	tests := []struct {
-		name        string
-		setupFunc   func(string) error
+		name         string
+		setupFunc    func(string) error
 		expectedType DiskType
 		expectedConf bool
 	}{
@@ -155,10 +155,10 @@ func TestSanitizeName(t *testing.T) {
 // TestGenerateMediaDirName tests media directory name generation
 func TestGenerateMediaDirName(t *testing.T) {
 	tests := []struct {
-		title    string
-		year     int
+		title     string
+		year      int
 		mediaType MediaType
-		expected string
+		expected  string
 	}{
 		{"The Matrix", 1999, Film, "The Matrix (1999) [Film]"},
 		{"Breaking Bad", 0, TV, "Breaking Bad [TV]"},
@@ -235,10 +235,10 @@ func TestExecuteImportNewFilm(t *testing.T) {
 			Name: "source-disk",
 			Path: sourceDir,
 		},
-		MediaKind: Film,
-		Title:     "Test Film",
-		Year:      2020,
-		DiskType:  DiskTypeBluRay,
+		MediaKind:     Film,
+		Title:         "Test Film",
+		Year:          2020,
+		DiskType:      DiskTypeBluRay,
 		AddToExisting: false,
 	}
 
@@ -288,11 +288,11 @@ func TestExecuteImportNewTV(t *testing.T) {
 			Name: "source-disk",
 			Path: sourceDir,
 		},
-		MediaKind: TV,
-		Title:     "Test Show",
-		SeriesNum: 1,
-		DiskNum:   2,
-		DiskType:  DiskTypeDVD,
+		MediaKind:     TV,
+		Title:         "Test Show",
+		SeriesNum:     1,
+		DiskNum:       2,
+		DiskType:      DiskTypeDVD,
 		AddToExisting: false,
 	}
 
@@ -332,11 +332,11 @@ func TestExecuteImportAddToExisting(t *testing.T) {
 			Name: "source-disk",
 			Path: sourceDir,
 		},
-		MediaKind: Film,
-		Title:     "Existing Film",
-		Year:      2020,
-		DiskType:  DiskTypeBluRay,
-		AddToExisting: true,
+		MediaKind:         Film,
+		Title:             "Existing Film",
+		Year:              2020,
+		DiskType:          DiskTypeBluRay,
+		AddToExisting:     true,
 		ExistingMediaPath: existingMedia,
 	}
 
@@ -375,13 +375,13 @@ func TestExecuteImportWithTMDB(t *testing.T) {
 			Name: "source-disk",
 			Path: sourceDir,
 		},
-		MediaKind: Film,
-		Title:     "User Title",
-		Year:      2020,
-		TMDBID:    "12345",
-		TMDBTitle: "Official TMDB Title",
-		TMDBYear:  2021,
-		DiskType:  DiskTypeBluRay,
+		MediaKind:     Film,
+		Title:         "User Title",
+		Year:          2020,
+		TMDBID:        "12345",
+		TMDBTitle:     "Official TMDB Title",
+		TMDBYear:      2021,
+		DiskType:      DiskTypeBluRay,
 		AddToExisting: false,
 	}
 
@@ -436,10 +436,10 @@ func TestExecuteImportDuplicateDest(t *testing.T) {
 			Name: "source-disk",
 			Path: sourceDir,
 		},
-		MediaKind: Film,
-		Title:     "Test Film",
-		Year:      2020,
-		DiskType:  DiskTypeBluRay,
+		MediaKind:     Film,
+		Title:         "Test Film",
+		Year:          2020,
+		DiskType:      DiskTypeBluRay,
 		AddToExisting: false,
 	}
 

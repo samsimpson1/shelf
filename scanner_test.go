@@ -42,8 +42,8 @@ func TestScanFileNotDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tmpFile.Name())
-	tmpFile.Close()
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
+	_ = tmpFile.Close()
 
 	scanner := NewScanner(tmpFile.Name())
 	_, err = scanner.Scan()
@@ -156,39 +156,39 @@ func TestScanTestdata(t *testing.T) {
 
 func TestParseFilmName(t *testing.T) {
 	tests := []struct {
-		name      string
-		dirName   string
+		name        string
+		dirName     string
 		shouldMatch bool
-		wantTitle string
-		wantYear  int
+		wantTitle   string
+		wantYear    int
 	}{
 		{
-			name:      "Valid film",
-			dirName:   "War of the Worlds (2025) [Film]",
+			name:        "Valid film",
+			dirName:     "War of the Worlds (2025) [Film]",
 			shouldMatch: true,
-			wantTitle: "War of the Worlds",
-			wantYear:  2025,
+			wantTitle:   "War of the Worlds",
+			wantYear:    2025,
 		},
 		{
-			name:      "Film with special chars",
-			dirName:   "The Lord of the Rings: The Fellowship of the Ring (2001) [Film]",
+			name:        "Film with special chars",
+			dirName:     "The Lord of the Rings: The Fellowship of the Ring (2001) [Film]",
 			shouldMatch: true,
-			wantTitle: "The Lord of the Rings: The Fellowship of the Ring",
-			wantYear:  2001,
+			wantTitle:   "The Lord of the Rings: The Fellowship of the Ring",
+			wantYear:    2001,
 		},
 		{
-			name:      "TV show (should not match)",
-			dirName:   "Breaking Bad [TV]",
+			name:        "TV show (should not match)",
+			dirName:     "Breaking Bad [TV]",
 			shouldMatch: false,
 		},
 		{
-			name:      "Invalid format - no year",
-			dirName:   "Some Movie [Film]",
+			name:        "Invalid format - no year",
+			dirName:     "Some Movie [Film]",
 			shouldMatch: false,
 		},
 		{
-			name:      "Invalid format - no brackets",
-			dirName:   "Some Movie (2020)",
+			name:        "Invalid format - no brackets",
+			dirName:     "Some Movie (2020)",
 			shouldMatch: false,
 		},
 	}
@@ -219,31 +219,31 @@ func TestParseFilmName(t *testing.T) {
 
 func TestParseTVName(t *testing.T) {
 	tests := []struct {
-		name      string
-		dirName   string
+		name        string
+		dirName     string
 		shouldMatch bool
-		wantTitle string
+		wantTitle   string
 	}{
 		{
-			name:      "Valid TV show",
-			dirName:   "Better Call Saul [TV]",
+			name:        "Valid TV show",
+			dirName:     "Better Call Saul [TV]",
 			shouldMatch: true,
-			wantTitle: "Better Call Saul",
+			wantTitle:   "Better Call Saul",
 		},
 		{
-			name:      "TV show with special chars",
-			dirName:   "Game of Thrones: Season One [TV]",
+			name:        "TV show with special chars",
+			dirName:     "Game of Thrones: Season One [TV]",
 			shouldMatch: true,
-			wantTitle: "Game of Thrones: Season One",
+			wantTitle:   "Game of Thrones: Season One",
 		},
 		{
-			name:      "Film (should not match)",
-			dirName:   "Some Movie (2020) [Film]",
+			name:        "Film (should not match)",
+			dirName:     "Some Movie (2020) [Film]",
 			shouldMatch: false,
 		},
 		{
-			name:      "Invalid format - no brackets",
-			dirName:   "Some Show TV",
+			name:        "Invalid format - no brackets",
+			dirName:     "Some Show TV",
 			shouldMatch: false,
 		},
 	}
@@ -399,7 +399,7 @@ func TestReadTMDBIDWithWhitespace(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	tmdbFile := filepath.Join(tmpDir, "tmdb.txt")
 	err = os.WriteFile(tmdbFile, []byte("  12345  \n"), 0644)
@@ -452,7 +452,7 @@ func TestReadTitleWithWhitespace(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	titleFile := filepath.Join(tmpDir, "title.txt")
 	err = os.WriteFile(titleFile, []byte("  The Matrix  \n"), 0644)
@@ -498,7 +498,7 @@ func TestReadMusicBrainzIDWithWhitespace(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	mbFile := filepath.Join(tmpDir, "musicbrainz.txt")
 	err = os.WriteFile(mbFile, []byte("  abc123-def456-ghi789  \n"), 0644)
@@ -669,17 +669,17 @@ func TestScanIgnoresNonMediaDirectories(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Create some directories that don't match patterns
-	os.Mkdir(filepath.Join(tmpDir, "Random Folder"), 0755)
-	os.Mkdir(filepath.Join(tmpDir, "Another Directory"), 0755)
-	os.WriteFile(filepath.Join(tmpDir, "file.txt"), []byte("test"), 0644)
+	_ = os.Mkdir(filepath.Join(tmpDir, "Random Folder"), 0755)
+	_ = os.Mkdir(filepath.Join(tmpDir, "Another Directory"), 0755)
+	_ = os.WriteFile(filepath.Join(tmpDir, "file.txt"), []byte("test"), 0644)
 
 	// Create one valid film
 	filmDir := filepath.Join(tmpDir, "Test Film (2020) [Film]")
-	os.Mkdir(filmDir, 0755)
-	os.Mkdir(filepath.Join(filmDir, "Disk [DVD]"), 0755)
+	_ = os.Mkdir(filmDir, 0755)
+	_ = os.Mkdir(filepath.Join(filmDir, "Disk [DVD]"), 0755)
 
 	scanner := NewScanner(tmpDir)
 	mediaList, err := scanner.Scan()
@@ -761,15 +761,15 @@ func TestSizeCacheUpdate(t *testing.T) {
 
 	// Create a film directory with multiple disks
 	filmPath := filepath.Join(testDir, "Multi Disk Film (2020) [Film]")
-	os.Mkdir(filmPath, 0755)
+	_ = os.Mkdir(filmPath, 0755)
 	disk1Path := filepath.Join(filmPath, "Disk [Blu-Ray]")
 	disk2Path := filepath.Join(filmPath, "Disk [DVD]")
-	os.Mkdir(disk1Path, 0755)
-	os.Mkdir(disk2Path, 0755)
+	_ = os.Mkdir(disk1Path, 0755)
+	_ = os.Mkdir(disk2Path, 0755)
 
 	// Add some test files to each disk
-	os.WriteFile(filepath.Join(disk1Path, "file1.txt"), []byte("test data 1"), 0644)
-	os.WriteFile(filepath.Join(disk2Path, "file2.txt"), []byte("test data 2"), 0644)
+	_ = os.WriteFile(filepath.Join(disk1Path, "file1.txt"), []byte("test data 1"), 0644)
+	_ = os.WriteFile(filepath.Join(disk2Path, "file2.txt"), []byte("test data 2"), 0644)
 
 	scanner := NewScanner(testDir)
 
@@ -802,7 +802,7 @@ func TestSizeCacheInvalid(t *testing.T) {
 
 	// Create an invalid cache file
 	cachePath := filepath.Join(filmPath, "sizes.json")
-	os.WriteFile(cachePath, []byte("invalid json{{{"), 0644)
+	_ = os.WriteFile(cachePath, []byte("invalid json{{{"), 0644)
 
 	// Scan should handle invalid cache gracefully
 	disks := scanner.collectFilmDisks(filmPath)

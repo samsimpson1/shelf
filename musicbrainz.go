@@ -99,7 +99,7 @@ func (c *MusicBrainzClient) FetchRelease(mbid string) (*MBRelease, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch release: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("MusicBrainz API returned status %d for release %s", resp.StatusCode, mbid)
@@ -135,7 +135,7 @@ func (c *MusicBrainzClient) SearchReleases(query string) ([]MBReleaseSearchResul
 	if err != nil {
 		return nil, fmt.Errorf("failed to search releases: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("MusicBrainz API returned status %d for search", resp.StatusCode)

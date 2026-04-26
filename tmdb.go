@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	tmdbAPIBaseURL = "https://api.themoviedb.org/3"
+	tmdbAPIBaseURL   = "https://api.themoviedb.org/3"
 	tmdbImageBaseURL = "https://image.tmdb.org/t/p/original"
 )
 
@@ -115,7 +115,7 @@ func (c *TMDBClient) FetchMovieMetadata(movieID string) (*MovieResponse, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch movie metadata: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("TMDB API returned status %d for movie %s", resp.StatusCode, movieID)
@@ -137,7 +137,7 @@ func (c *TMDBClient) FetchTVMetadata(tvID string) (*TVResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch TV metadata: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("TMDB API returned status %d for TV show %s", resp.StatusCode, tvID)
@@ -170,7 +170,7 @@ func (c *TMDBClient) SearchMovies(query string, year int) ([]MovieSearchResult, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to search movies: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("TMDB API returned status %d for movie search", resp.StatusCode)
@@ -203,7 +203,7 @@ func (c *TMDBClient) SearchTV(query string) ([]TVSearchResult, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to search TV shows: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("TMDB API returned status %d for TV search", resp.StatusCode)
@@ -296,7 +296,7 @@ func (c *TMDBClient) DownloadPoster(posterPath, destDir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to download poster: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to download poster: status %d", resp.StatusCode)
@@ -316,7 +316,7 @@ func (c *TMDBClient) DownloadPoster(posterPath, destDir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create poster file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Write the image data to the file
 	_, err = io.Copy(file, resp.Body)
@@ -535,7 +535,7 @@ func (c *TMDBClient) FetchPosterImages(tmdbID string, mediaType MediaType) ([]Po
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch poster images: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("TMDB API returned status %d for poster images", resp.StatusCode)

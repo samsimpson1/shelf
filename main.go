@@ -10,7 +10,7 @@ import (
 
 // printHelp prints the help message showing all configuration options
 func printHelp(w io.Writer) {
-	fmt.Fprintf(w, `Media Backup Manager - A web application for managing media disk backups
+	_, _ = fmt.Fprintf(w, `Media Backup Manager - A web application for managing media disk backups
 
 Usage:
   ./shelf           Start the server with default or environment-configured settings
@@ -130,10 +130,9 @@ func main() {
 	// Create scanner with optional TMDB and MusicBrainz clients
 	var scanner *Scanner
 	var tmdbClient *TMDBClient
-	var musicBrainzClient *MusicBrainzClient
 
 	// Always create MusicBrainz client (no API key required)
-	musicBrainzClient = NewMusicBrainzClient()
+	musicBrainzClient := NewMusicBrainzClient()
 	log.Println("MusicBrainz client initialized for track list fetching")
 
 	if tmdbAPIKey != "" {

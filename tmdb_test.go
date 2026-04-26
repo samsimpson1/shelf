@@ -76,7 +76,7 @@ func TestFetchMovieMetadata(t *testing.T) {
 
 		// Return mock response
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, `{
+		_, _ = fmt.Fprint(w, `{
 			"id": 755898,
 			"title": "War of the Worlds",
 			"poster_path": "/abc123.jpg",
@@ -86,13 +86,8 @@ func TestFetchMovieMetadata(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// Create client with custom base URL
-	client := NewTMDBClient("test-key")
-	// Override the base URL for testing (we'll need to modify tmdb.go to support this)
-	// For now, we'll test with the actual implementation
-
 	// Since we can't easily override the base URL, let's test the error case
-	client = NewTMDBClient("")
+	client := NewTMDBClient("")
 	_, err := client.FetchMovieMetadata("invalid")
 	if err == nil {
 		t.Error("Expected error for invalid API key, got nil")
@@ -120,7 +115,7 @@ func TestDownloadPoster(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/jpeg")
 		// Write some fake image data
-		w.Write([]byte("fake-image-data"))
+		_, _ = w.Write([]byte("fake-image-data"))
 	}))
 	defer server.Close()
 
@@ -129,8 +124,7 @@ func TestDownloadPoster(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	client := NewTMDBClient("test-key")
 
 	// We can't easily test the actual download without modifying the code
@@ -148,7 +142,7 @@ func TestDownloadPosterToFile(t *testing.T) {
 	imageData := []byte("fake-jpeg-data")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/jpeg")
-		w.Write(imageData)
+		_, _ = w.Write(imageData)
 	}))
 	defer server.Close()
 
@@ -157,8 +151,7 @@ func TestDownloadPosterToFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// We need to test with a real download, but we can't override the base URL
 	// This is a limitation of the current implementation
 	// Let's document this as a future enhancement
@@ -187,8 +180,7 @@ func TestFetchAndSavePosterExistingPoster(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Create all metadata files to skip fetching
 	posterPath := filepath.Join(tmpDir, "poster.jpg")
 	err = os.WriteFile(posterPath, []byte("existing-poster"), 0644)
@@ -249,7 +241,7 @@ func TestFetchAndSavePosterWithMockServer(t *testing.T) {
 		if r.URL.Path == "/movie/123" {
 			movieRequests++
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprint(w, `{
+			_, _ = fmt.Fprint(w, `{
 				"id": 123,
 				"title": "Test Movie",
 				"poster_path": "/test-poster.jpg",
@@ -261,7 +253,7 @@ func TestFetchAndSavePosterWithMockServer(t *testing.T) {
 
 		if r.URL.Path == "/tv/456" {
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprint(w, `{
+			_, _ = fmt.Fprint(w, `{
 				"id": 456,
 				"name": "Test TV Show",
 				"poster_path": "/test-tv-poster.jpg",
@@ -274,7 +266,7 @@ func TestFetchAndSavePosterWithMockServer(t *testing.T) {
 		if r.URL.Path == "/test-poster.jpg" || r.URL.Path == "/test-tv-poster.jpg" {
 			posterRequests++
 			w.Header().Set("Content-Type", "image/jpeg")
-			w.Write([]byte("fake-image-data"))
+			_, _ = w.Write([]byte("fake-image-data"))
 			return
 		}
 
@@ -293,11 +285,10 @@ func TestPosterFileExtensions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	tests := []struct {
-		name     string
-		ext      string
+		name       string
+		ext        string
 		shouldSkip bool
 	}{
 		{"jpg extension", ".jpg", true},
@@ -350,10 +341,10 @@ func TestPosterFileExtensions(t *testing.T) {
 			}
 
 			// Clean up
-			os.Remove(posterPath)
-			os.Remove(descPath)
-			os.Remove(genrePath)
-			os.Remove(titlePath)
+			_ = os.Remove(posterPath)
+			_ = os.Remove(descPath)
+			_ = os.Remove(genrePath)
+			_ = os.Remove(titlePath)
 		})
 	}
 }
@@ -363,8 +354,7 @@ func TestSaveDescription(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	client := NewTMDBClient("test-key")
 
 	overview := "This is a test movie overview with some description text."
@@ -390,8 +380,7 @@ func TestSaveDescriptionEmpty(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	client := NewTMDBClient("test-key")
 
 	err = client.saveDescription("", tmpDir)
@@ -405,8 +394,7 @@ func TestSaveGenres(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	client := NewTMDBClient("test-key")
 
 	genres := []Genre{
@@ -438,8 +426,7 @@ func TestSaveGenresEmpty(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	client := NewTMDBClient("test-key")
 
 	err = client.saveGenres([]Genre{}, tmpDir)
@@ -454,13 +441,12 @@ func TestFetchAndSaveMetadataAllFilesExist(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Create all four files
-	os.WriteFile(filepath.Join(tmpDir, "poster.jpg"), []byte("poster"), 0644)
-	os.WriteFile(filepath.Join(tmpDir, "description.txt"), []byte("description"), 0644)
-	os.WriteFile(filepath.Join(tmpDir, "genre.txt"), []byte("Action"), 0644)
-	os.WriteFile(filepath.Join(tmpDir, "title.txt"), []byte("Title"), 0644)
+	_ = os.WriteFile(filepath.Join(tmpDir, "poster.jpg"), []byte("poster"), 0644)
+	_ = os.WriteFile(filepath.Join(tmpDir, "description.txt"), []byte("description"), 0644)
+	_ = os.WriteFile(filepath.Join(tmpDir, "genre.txt"), []byte("Action"), 0644)
+	_ = os.WriteFile(filepath.Join(tmpDir, "title.txt"), []byte("Title"), 0644)
 
 	client := NewTMDBClient("test-key")
 
@@ -521,7 +507,7 @@ func TestSearchMovies(t *testing.T) {
 
 		// Return mock response with multiple results
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, `{
+		_, _ = fmt.Fprint(w, `{
 			"results": [
 				{
 					"id": 1,
@@ -587,7 +573,7 @@ func TestSearchTV(t *testing.T) {
 
 		// Return mock response with multiple results
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, `{
+		_, _ = fmt.Fprint(w, `{
 			"results": [
 				{
 					"id": 100,
@@ -625,12 +611,12 @@ func TestSearchMoviesResultLimit(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 
 		// Build response with 25 results
-		fmt.Fprint(w, `{"results": [`)
+		_, _ = fmt.Fprint(w, `{"results": [`)
 		for i := 1; i <= 25; i++ {
 			if i > 1 {
-				fmt.Fprint(w, ",")
+				_, _ = fmt.Fprint(w, ",")
 			}
-			fmt.Fprintf(w, `{
+			_, _ = fmt.Fprintf(w, `{
 				"id": %d,
 				"title": "Movie %d",
 				"release_date": "2020-01-01",
@@ -639,7 +625,7 @@ func TestSearchMoviesResultLimit(t *testing.T) {
 				"popularity": %d
 			}`, i, i, 100-i)
 		}
-		fmt.Fprint(w, `]}`)
+		_, _ = fmt.Fprint(w, `]}`)
 	}))
 	defer server.Close()
 
@@ -653,12 +639,12 @@ func TestSearchTVResultLimit(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 
 		// Build response with 25 results
-		fmt.Fprint(w, `{"results": [`)
+		_, _ = fmt.Fprint(w, `{"results": [`)
 		for i := 1; i <= 25; i++ {
 			if i > 1 {
-				fmt.Fprint(w, ",")
+				_, _ = fmt.Fprint(w, ",")
 			}
-			fmt.Fprintf(w, `{
+			_, _ = fmt.Fprintf(w, `{
 				"id": %d,
 				"name": "TV Show %d",
 				"first_air_date": "2020-01-01",
@@ -667,7 +653,7 @@ func TestSearchTVResultLimit(t *testing.T) {
 				"popularity": %d
 			}`, i, i, 100-i)
 		}
-		fmt.Fprint(w, `]}`)
+		_, _ = fmt.Fprint(w, `]}`)
 	}))
 	defer server.Close()
 
@@ -679,7 +665,7 @@ func TestSearchMoviesMissingPosterPath(t *testing.T) {
 	// Test handling of search results with missing optional fields
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, `{
+		_, _ = fmt.Fprint(w, `{
 			"results": [
 				{
 					"id": 1,
@@ -700,7 +686,7 @@ func TestSearchTVMissingFields(t *testing.T) {
 	// Test handling of TV search results with missing optional fields
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, `{
+		_, _ = fmt.Fprint(w, `{
 			"results": [
 				{
 					"id": 100,
@@ -721,8 +707,7 @@ func TestWriteTMDBID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Test writing a valid TMDB ID
 	tmdbID := "12345"
 	err = WriteTMDBID(tmdbID, tmpDir)
@@ -759,8 +744,7 @@ func TestWriteTMDBIDOverwrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Create existing tmdb.txt
 	tmdbPath := filepath.Join(tmpDir, "tmdb.txt")
 	err = os.WriteFile(tmdbPath, []byte("old-id"), 0644)
@@ -791,8 +775,7 @@ func TestWriteTMDBIDEmptyID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Test with empty TMDB ID
 	err = WriteTMDBID("", tmpDir)
 	if err == nil {
@@ -865,8 +848,7 @@ func TestWriteTMDBIDFileWriteError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Make directory read-only
 	err = os.Chmod(tmpDir, 0444)
 	if err != nil {
@@ -874,7 +856,7 @@ func TestWriteTMDBIDFileWriteError(t *testing.T) {
 	}
 
 	// Restore permissions for cleanup
-	defer os.Chmod(tmpDir, 0755)
+	defer func() { _ = os.Chmod(tmpDir, 0755) }()
 
 	// Try to write TMDB ID - should fail due to permissions
 	err = WriteTMDBID("12345", tmpDir)
@@ -888,8 +870,7 @@ func TestSaveTitle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	client := NewTMDBClient("test-key")
 
 	title := "The Official Movie Title"
@@ -915,8 +896,7 @@ func TestSaveTitleEmpty(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	client := NewTMDBClient("test-key")
 
 	err = client.saveTitle("", tmpDir)
@@ -931,13 +911,13 @@ func TestFetchAndSaveMetadataAllFilesExistWithTitle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Create all four files
-	os.WriteFile(filepath.Join(tmpDir, "poster.jpg"), []byte("poster"), 0644)
-	os.WriteFile(filepath.Join(tmpDir, "description.txt"), []byte("description"), 0644)
-	os.WriteFile(filepath.Join(tmpDir, "genre.txt"), []byte("Action"), 0644)
-	os.WriteFile(filepath.Join(tmpDir, "title.txt"), []byte("Official Title"), 0644)
+	_ = os.WriteFile(filepath.Join(tmpDir, "poster.jpg"), []byte("poster"), 0644)
+	_ = os.WriteFile(filepath.Join(tmpDir, "description.txt"), []byte("description"), 0644)
+	_ = os.WriteFile(filepath.Join(tmpDir, "genre.txt"), []byte("Action"), 0644)
+	_ = os.WriteFile(filepath.Join(tmpDir, "title.txt"), []byte("Official Title"), 0644)
 
 	client := NewTMDBClient("test-key")
 
@@ -1013,8 +993,7 @@ func TestDeleteExistingPosterNoFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Delete when no poster exists (should not error)
 	err = DeleteExistingPoster(tmpDir)
 	if err != nil {
@@ -1027,8 +1006,7 @@ func TestDeleteExistingPosterJPG(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Create a .jpg poster
 	posterPath := filepath.Join(tmpDir, "poster.jpg")
 	err = os.WriteFile(posterPath, []byte("test-poster"), 0644)
@@ -1053,8 +1031,7 @@ func TestDeleteExistingPosterPNG(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Create a .png poster
 	posterPath := filepath.Join(tmpDir, "poster.png")
 	err = os.WriteFile(posterPath, []byte("test-poster"), 0644)
@@ -1079,14 +1056,13 @@ func TestDeleteExistingPosterMultipleExtensions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Create multiple poster files with different extensions (should not happen normally)
 	jpgPath := filepath.Join(tmpDir, "poster.jpg")
 	pngPath := filepath.Join(tmpDir, "poster.png")
 
-	os.WriteFile(jpgPath, []byte("jpg-poster"), 0644)
-	os.WriteFile(pngPath, []byte("png-poster"), 0644)
+	_ = os.WriteFile(jpgPath, []byte("jpg-poster"), 0644)
+	_ = os.WriteFile(pngPath, []byte("png-poster"), 0644)
 
 	// Delete - should remove all
 	err = DeleteExistingPoster(tmpDir)
@@ -1121,8 +1097,7 @@ func TestDeleteExistingPosterWebP(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Create a .webp poster
 	posterPath := filepath.Join(tmpDir, "poster.webp")
 	err = os.WriteFile(posterPath, []byte("test-poster"), 0644)
@@ -1147,8 +1122,7 @@ func TestDeleteExistingPosterJPEG(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
-
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	// Create a .jpeg poster
 	posterPath := filepath.Join(tmpDir, "poster.jpeg")
 	err = os.WriteFile(posterPath, []byte("test-poster"), 0644)

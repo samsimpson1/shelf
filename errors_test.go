@@ -21,7 +21,7 @@ func TestWriteErrorDoesNotLeakErr(t *testing.T) {
 	writeError(w, http.StatusInternalServerError, "Something went wrong", err)
 
 	res := w.Result()
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	if res.StatusCode != http.StatusInternalServerError {
 		t.Errorf("status = %d, want %d", res.StatusCode, http.StatusInternalServerError)
@@ -79,7 +79,7 @@ func TestImportExecuteHandlerSanitizesError(t *testing.T) {
 	app.ImportExecuteHandler(w, req)
 
 	res := w.Result()
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	if res.StatusCode != http.StatusInternalServerError {
 		t.Errorf("status = %d, want %d", res.StatusCode, http.StatusInternalServerError)
