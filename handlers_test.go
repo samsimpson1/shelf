@@ -304,6 +304,7 @@ func TestDetailHandler(t *testing.T) {
 			app := NewApp(tt.mediaList, scanner, tmpl, "/test/media", "")
 
 			req := httptest.NewRequest(http.MethodGet, tt.requestPath, nil)
+			req.SetPathValue("slug", strings.TrimSuffix(strings.TrimPrefix(tt.requestPath, "/media/"), "/"))
 			w := httptest.NewRecorder()
 
 			app.DetailHandler(w, req)
@@ -541,6 +542,7 @@ func TestSelectPosterHandler(t *testing.T) {
 	app := NewApp(mediaList, nil, tmpl, "/test/media", "")
 
 	req := httptest.NewRequest(http.MethodGet, "/media/test-film-2020/select-poster", nil)
+	req.SetPathValue("slug", "test-film-2020")
 	w := httptest.NewRecorder()
 
 	app.SelectPosterHandler(w, req)
@@ -568,6 +570,7 @@ func TestSelectPosterHandlerNoTMDBID(t *testing.T) {
 	app.SetTMDBClient(client)
 
 	req := httptest.NewRequest(http.MethodGet, "/media/test-film-2020/select-poster", nil)
+	req.SetPathValue("slug", "test-film-2020")
 	w := httptest.NewRecorder()
 
 	app.SelectPosterHandler(w, req)
@@ -590,6 +593,7 @@ func TestSelectPosterHandlerNotFound(t *testing.T) {
 	app.SetTMDBClient(client)
 
 	req := httptest.NewRequest(http.MethodGet, "/media/nonexistent/select-poster", nil)
+	req.SetPathValue("slug", "nonexistent")
 	w := httptest.NewRecorder()
 
 	app.SelectPosterHandler(w, req)
@@ -611,17 +615,20 @@ func TestSavePosterHandlerMethodNotAllowed(t *testing.T) {
 	client := NewTMDBClient("test-key")
 	app.SetTMDBClient(client)
 
-	// Test with GET (should only accept POST)
+	// Method constraint is enforced by the mux pattern, not the handler.
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /media/{slug}/save-poster", app.SavePosterHandler)
+
 	req := httptest.NewRequest(http.MethodGet, "/media/test-film-2020/save-poster", nil)
 	w := httptest.NewRecorder()
 
-	app.SavePosterHandler(w, req)
+	mux.ServeHTTP(w, req)
 
 	res := w.Result()
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusMethodNotAllowed {
-		t.Errorf("SavePosterHandler() with GET status = %v, want %v", res.StatusCode, http.StatusMethodNotAllowed)
+		t.Errorf("save-poster GET status = %v, want %v", res.StatusCode, http.StatusMethodNotAllowed)
 	}
 }
 
@@ -633,6 +640,7 @@ func TestSavePosterHandlerNoTMDBClient(t *testing.T) {
 	app := NewApp(mediaList, nil, nil, "/test/media", "")
 
 	req := httptest.NewRequest(http.MethodPost, "/media/test-film-2020/save-poster", nil)
+	req.SetPathValue("slug", "test-film-2020")
 	w := httptest.NewRecorder()
 
 	app.SavePosterHandler(w, req)
@@ -657,6 +665,7 @@ func TestSavePosterHandlerMissingPosterPath(t *testing.T) {
 	// POST without poster_path form value
 	req := httptest.NewRequest(http.MethodPost, "/media/test-film-2020/save-poster", nil)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetPathValue("slug", "test-film-2020")
 	w := httptest.NewRecorder()
 
 	app.SavePosterHandler(w, req)
@@ -678,6 +687,7 @@ func TestSavePosterHandlerNotFound(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/media/nonexistent/save-poster",
 		strings.NewReader("poster_path=/test.jpg"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetPathValue("slug", "nonexistent")
 	w := httptest.NewRecorder()
 
 	app.SavePosterHandler(w, req)

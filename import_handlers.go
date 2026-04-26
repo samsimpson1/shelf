@@ -53,9 +53,6 @@ func (s *ImportSessionStore) Delete(id string) {
 	delete(s.sessions, id)
 }
 
-// Global session store
-var importSessionStore = NewImportSessionStore()
-
 // ImportListHandler shows the list of directories available for import
 func (app *App) ImportListHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if import is enabled
@@ -64,11 +61,7 @@ func (app *App) ImportListHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Reload templates in dev mode
-	tmpl := app.templates
-	if app.devMode {
-		tmpl = app.loadTemplates()
-	}
+	tmpl := app.getTemplates()
 
 	// Scan import directory
 	imports, err := app.importScanner.Scan()
@@ -137,7 +130,7 @@ func (app *App) ImportStartHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store session and get ID
-	sessionID := importSessionStore.Create(session)
+	sessionID := app.importSessions.Create(session)
 
 	// Redirect to step 1 (choose media kind)
 	http.Redirect(w, r, "/import/step1?session="+url.QueryEscape(sessionID), http.StatusSeeOther)
@@ -151,7 +144,7 @@ func (app *App) ImportStep1Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, ok := importSessionStore.Get(sessionID)
+	session, ok := app.importSessions.Get(sessionID)
 	if !ok {
 		http.Error(w, "Invalid session", http.StatusNotFound)
 		return
@@ -182,11 +175,7 @@ func (app *App) ImportStep1Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Reload templates in dev mode
-	tmpl := app.templates
-	if app.devMode {
-		tmpl = app.loadTemplates()
-	}
+	tmpl := app.getTemplates()
 
 	data := struct {
 		Session   *ImportSession
@@ -212,7 +201,7 @@ func (app *App) ImportStep2Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, ok := importSessionStore.Get(sessionID)
+	session, ok := app.importSessions.Get(sessionID)
 	if !ok {
 		http.Error(w, "Invalid session", http.StatusNotFound)
 		return
@@ -267,11 +256,7 @@ func (app *App) ImportStep2Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	app.mediaListMutex.RUnlock()
 
-	// Reload templates in dev mode
-	tmpl := app.templates
-	if app.devMode {
-		tmpl = app.loadTemplates()
-	}
+	tmpl := app.getTemplates()
 
 	data := struct {
 		Session         *ImportSession
@@ -299,7 +284,7 @@ func (app *App) ImportStep3Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, ok := importSessionStore.Get(sessionID)
+	session, ok := app.importSessions.Get(sessionID)
 	if !ok {
 		http.Error(w, "Invalid session", http.StatusNotFound)
 		return
@@ -360,11 +345,7 @@ func (app *App) ImportStep3Handler(w http.ResponseWriter, r *http.Request) {
 		errorMsg = fmt.Sprintf("Search error: %v", searchErr)
 	}
 
-	// Reload templates in dev mode
-	tmpl := app.templates
-	if app.devMode {
-		tmpl = app.loadTemplates()
-	}
+	tmpl := app.getTemplates()
 
 	data := struct {
 		Session       *ImportSession
@@ -402,7 +383,7 @@ func (app *App) ImportStep3ConfirmHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	session, ok := importSessionStore.Get(sessionID)
+	session, ok := app.importSessions.Get(sessionID)
 	if !ok {
 		http.Error(w, "Invalid session", http.StatusNotFound)
 		return
@@ -481,7 +462,7 @@ func (app *App) ImportStep3ManualHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	session, ok := importSessionStore.Get(sessionID)
+	session, ok := app.importSessions.Get(sessionID)
 	if !ok {
 		http.Error(w, "Invalid session", http.StatusNotFound)
 		return
@@ -518,11 +499,7 @@ func (app *App) ImportStep3ManualHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Reload templates in dev mode
-	tmpl := app.templates
-	if app.devMode {
-		tmpl = app.loadTemplates()
-	}
+	tmpl := app.getTemplates()
 
 	data := struct {
 		Session   *ImportSession
@@ -548,7 +525,7 @@ func (app *App) ImportStep4Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, ok := importSessionStore.Get(sessionID)
+	session, ok := app.importSessions.Get(sessionID)
 	if !ok {
 		http.Error(w, "Invalid session", http.StatusNotFound)
 		return
@@ -611,11 +588,7 @@ func (app *App) ImportStep4Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Reload templates in dev mode
-	tmpl := app.templates
-	if app.devMode {
-		tmpl = app.loadTemplates()
-	}
+	tmpl := app.getTemplates()
 
 	data := struct {
 		Session   *ImportSession
@@ -641,17 +614,13 @@ func (app *App) ImportConfirmHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, ok := importSessionStore.Get(sessionID)
+	session, ok := app.importSessions.Get(sessionID)
 	if !ok {
 		http.Error(w, "Invalid session", http.StatusNotFound)
 		return
 	}
 
-	// Reload templates in dev mode
-	tmpl := app.templates
-	if app.devMode {
-		tmpl = app.loadTemplates()
-	}
+	tmpl := app.getTemplates()
 
 	// Generate preview of destination path
 	finalTitle := session.Title
@@ -713,7 +682,7 @@ func (app *App) ImportExecuteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, ok := importSessionStore.Get(sessionID)
+	session, ok := app.importSessions.Get(sessionID)
 	if !ok {
 		http.Error(w, "Invalid session", http.StatusNotFound)
 		return
@@ -771,7 +740,7 @@ func (app *App) ImportExecuteHandler(w http.ResponseWriter, r *http.Request) {
 	dirName := session.SourceDir.Name
 
 	// Clean up session
-	importSessionStore.Delete(sessionID)
+	app.importSessions.Delete(sessionID)
 
 	// Redirect to success page with directory name
 	http.Redirect(w, r, "/import/success?dir="+url.QueryEscape(dirName), http.StatusSeeOther)
@@ -782,11 +751,7 @@ func (app *App) ImportSuccessHandler(w http.ResponseWriter, r *http.Request) {
 	// Get directory name from query parameter
 	dirName := r.URL.Query().Get("dir")
 
-	// Reload templates in dev mode
-	tmpl := app.templates
-	if app.devMode {
-		tmpl = app.loadTemplates()
-	}
+	tmpl := app.getTemplates()
 
 	data := struct {
 		DirName string

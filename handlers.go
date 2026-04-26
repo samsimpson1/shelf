@@ -26,6 +26,7 @@ type App struct {
 	tmdbClient        *TMDBClient
 	musicBrainzClient *MusicBrainzClient
 	playURLPrefix     string // URL prefix for play commands
+	importSessions    *ImportSessionStore
 }
 
 // NewApp creates a new App instance
@@ -46,6 +47,7 @@ func NewApp(mediaList []Media, scanner *Scanner, templates *template.Template, m
 		tmdbClient:        nil,
 		musicBrainzClient: nil,
 		playURLPrefix:     "",
+		importSessions:    NewImportSessionStore(),
 	}
 }
 
@@ -86,37 +88,32 @@ func (app *App) RefreshMediaList() error {
 	return nil
 }
 
-// loadTemplates reloads templates from disk (used in dev mode)
-func (app *App) loadTemplates() *template.Template {
-	tmpl, err := template.ParseFiles(
-		"templates/index.html",
-		"templates/detail.html",
-		"templates/search.html",
-		"templates/confirm.html",
-		"templates/select_poster.html",
-		"templates/import_list.html",
-		"templates/import_step1.html",
-		"templates/import_step2.html",
-		"templates/import_step3.html",
-		"templates/import_step4.html",
-		"templates/import_step5.html",
-		"templates/import_confirm.html",
-		"templates/import_success.html",
-	)
+// templatesGlob is the single source of truth for which template files are loaded.
+const templatesGlob = "templates/*.html"
+
+// parseTemplates loads every template under templatesGlob.
+func parseTemplates() (*template.Template, error) {
+	return template.ParseGlob(templatesGlob)
+}
+
+// getTemplates returns the template set to use for rendering. In dev mode it
+// re-parses from disk on every call so edits are picked up without a restart;
+// otherwise it returns the cached set loaded at startup.
+func (app *App) getTemplates() *template.Template {
+	if !app.devMode {
+		return app.templates
+	}
+	tmpl, err := parseTemplates()
 	if err != nil {
 		log.Printf("Error reloading templates: %v", err)
-		return app.templates // Fall back to cached templates
+		return app.templates
 	}
 	return tmpl
 }
 
 // IndexHandler handles the main page request
 func (app *App) IndexHandler(w http.ResponseWriter, r *http.Request) {
-	// Reload templates in dev mode
-	tmpl := app.templates
-	if app.devMode {
-		tmpl = app.loadTemplates()
-	}
+	tmpl := app.getTemplates()
 
 	// Get a copy of the media list with read lock
 	app.mediaListMutex.RLock()
@@ -188,16 +185,9 @@ func (app *App) PosterHandler(w http.ResponseWriter, r *http.Request) {
 
 // DetailHandler handles individual media detail pages
 func (app *App) DetailHandler(w http.ResponseWriter, r *http.Request) {
-	// Reload templates in dev mode
-	tmpl := app.templates
-	if app.devMode {
-		tmpl = app.loadTemplates()
-	}
+	tmpl := app.getTemplates()
 
-	// Extract slug from URL: /media/{slug}
-	slug := strings.TrimPrefix(r.URL.Path, "/media/")
-	slug = strings.TrimSuffix(slug, "/")
-
+	slug := r.PathValue("slug")
 	if slug == "" {
 		http.NotFound(w, r)
 		return
@@ -263,20 +253,13 @@ func (app *App) SearchTMDBHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Reload templates in dev mode
-	tmpl := app.templates
-	if app.devMode {
-		tmpl = app.loadTemplates()
-	}
+	tmpl := app.getTemplates()
 
-	// Extract slug from URL: /media/{slug}/search-tmdb
-	path := strings.TrimPrefix(r.URL.Path, "/media/")
-	parts := strings.Split(path, "/")
-	if len(parts) < 2 {
+	slug := r.PathValue("slug")
+	if slug == "" {
 		http.NotFound(w, r)
 		return
 	}
-	slug := parts[0]
 
 	// Find media by slug
 	media := app.findMediaBySlug(slug)
@@ -372,20 +355,13 @@ func (app *App) ConfirmTMDBHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Reload templates in dev mode
-	tmpl := app.templates
-	if app.devMode {
-		tmpl = app.loadTemplates()
-	}
+	tmpl := app.getTemplates()
 
-	// Extract slug from URL: /media/{slug}/confirm-tmdb
-	path := strings.TrimPrefix(r.URL.Path, "/media/")
-	parts := strings.Split(path, "/")
-	if len(parts) < 2 {
+	slug := r.PathValue("slug")
+	if slug == "" {
 		http.NotFound(w, r)
 		return
 	}
-	slug := parts[0]
 
 	// Find media by slug
 	media := app.findMediaBySlug(slug)
@@ -482,26 +458,17 @@ func (app *App) ConfirmTMDBHandler(w http.ResponseWriter, r *http.Request) {
 
 // SaveTMDBHandler handles saving the TMDB ID
 func (app *App) SaveTMDBHandler(w http.ResponseWriter, r *http.Request) {
-	// Only accept POST requests
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	// Check if TMDB client is available
 	if app.tmdbClient == nil {
 		http.Error(w, "TMDB API is not configured", http.StatusServiceUnavailable)
 		return
 	}
 
-	// Extract slug from URL: /media/{slug}/set-tmdb
-	path := strings.TrimPrefix(r.URL.Path, "/media/")
-	parts := strings.Split(path, "/")
-	if len(parts) < 2 {
+	slug := r.PathValue("slug")
+	if slug == "" {
 		http.NotFound(w, r)
 		return
 	}
-	slug := parts[0]
 
 	// Find media by slug
 	media := app.findMediaBySlug(slug)
@@ -573,20 +540,13 @@ func (app *App) SelectPosterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Reload templates in dev mode
-	tmpl := app.templates
-	if app.devMode {
-		tmpl = app.loadTemplates()
-	}
+	tmpl := app.getTemplates()
 
-	// Extract slug from URL: /media/{slug}/select-poster
-	path := strings.TrimPrefix(r.URL.Path, "/media/")
-	parts := strings.Split(path, "/")
-	if len(parts) < 2 {
+	slug := r.PathValue("slug")
+	if slug == "" {
 		http.NotFound(w, r)
 		return
 	}
-	slug := parts[0]
 
 	// Find media by slug
 	media := app.findMediaBySlug(slug)
@@ -634,26 +594,17 @@ func (app *App) SelectPosterHandler(w http.ResponseWriter, r *http.Request) {
 
 // SavePosterHandler handles saving a selected poster
 func (app *App) SavePosterHandler(w http.ResponseWriter, r *http.Request) {
-	// Only accept POST requests
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	// Check if TMDB client is available
 	if app.tmdbClient == nil {
 		http.Error(w, "TMDB API is not configured", http.StatusServiceUnavailable)
 		return
 	}
 
-	// Extract slug from URL: /media/{slug}/save-poster
-	path := strings.TrimPrefix(r.URL.Path, "/media/")
-	parts := strings.Split(path, "/")
-	if len(parts) < 2 {
+	slug := r.PathValue("slug")
+	if slug == "" {
 		http.NotFound(w, r)
 		return
 	}
-	slug := parts[0]
 
 	// Find media by slug
 	media := app.findMediaBySlug(slug)

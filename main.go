@@ -2,12 +2,10 @@ package main
 
 import (
 	"fmt"
-	"html/template"
 	"io"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 )
 
 // printHelp prints the help message showing all configuration options
@@ -155,21 +153,7 @@ func main() {
 	log.Printf("Found %d media items", len(mediaList))
 
 	// Load templates
-	tmpl, err := template.ParseFiles(
-		"templates/index.html",
-		"templates/detail.html",
-		"templates/search.html",
-		"templates/confirm.html",
-		"templates/select_poster.html",
-		"templates/import_list.html",
-		"templates/import_step1.html",
-		"templates/import_step2.html",
-		"templates/import_step3.html",
-		"templates/import_step4.html",
-		"templates/import_step5.html",
-		"templates/import_confirm.html",
-		"templates/import_success.html",
-	)
+	tmpl, err := parseTemplates()
 	if err != nil {
 		log.Fatalf("Failed to load templates: %v", err)
 	}
@@ -207,25 +191,13 @@ func main() {
 	mux.HandleFunc("/import/execute", app.ImportExecuteHandler)
 	mux.HandleFunc("/import/success", app.ImportSuccessHandler)
 
-	// TMDB routes (must come before the general /media/ route)
-	mux.HandleFunc("/media/", func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
-		// Route to specific handlers based on path suffix
-		if strings.HasSuffix(path, "/search-tmdb") {
-			app.SearchTMDBHandler(w, r)
-		} else if strings.HasSuffix(path, "/confirm-tmdb") {
-			app.ConfirmTMDBHandler(w, r)
-		} else if strings.HasSuffix(path, "/set-tmdb") {
-			app.SaveTMDBHandler(w, r)
-		} else if strings.HasSuffix(path, "/select-poster") {
-			app.SelectPosterHandler(w, r)
-		} else if strings.HasSuffix(path, "/save-poster") {
-			app.SavePosterHandler(w, r)
-		} else {
-			// Default to detail handler
-			app.DetailHandler(w, r)
-		}
-	})
+	// Media detail and TMDB/poster sub-routes
+	mux.HandleFunc("GET /media/{slug}", app.DetailHandler)
+	mux.HandleFunc("GET /media/{slug}/search-tmdb", app.SearchTMDBHandler)
+	mux.HandleFunc("GET /media/{slug}/confirm-tmdb", app.ConfirmTMDBHandler)
+	mux.HandleFunc("POST /media/{slug}/set-tmdb", app.SaveTMDBHandler)
+	mux.HandleFunc("GET /media/{slug}/select-poster", app.SelectPosterHandler)
+	mux.HandleFunc("POST /media/{slug}/save-poster", app.SavePosterHandler)
 
 	// Serve static files (CSS, etc.)
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))

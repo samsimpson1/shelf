@@ -215,6 +215,7 @@ func TestSearchTMDBHandler_NoTMDBClient(t *testing.T) {
 	app := NewApp(mediaList, scanner, tmpl, testDir, "")
 
 	req := httptest.NewRequest(http.MethodGet, "/media/war-of-the-worlds-2025/search-tmdb", nil)
+	req.SetPathValue("slug", "war-of-the-worlds-2025")
 	w := httptest.NewRecorder()
 
 	app.SearchTMDBHandler(w, req)
@@ -230,6 +231,7 @@ func TestSearchTMDBHandler_InvalidSlug(t *testing.T) {
 	defer mockServer.Close()
 
 	req := httptest.NewRequest(http.MethodGet, "/media/nonexistent-media/search-tmdb", nil)
+	req.SetPathValue("slug", "nonexistent-media")
 	w := httptest.NewRecorder()
 
 	app.SearchTMDBHandler(w, req)
@@ -245,6 +247,7 @@ func TestSearchTMDBHandler_ShowFormWithoutQuery(t *testing.T) {
 	defer mockServer.Close()
 
 	req := httptest.NewRequest(http.MethodGet, "/media/war-of-the-worlds-2025/search-tmdb", nil)
+	req.SetPathValue("slug", "war-of-the-worlds-2025")
 	w := httptest.NewRecorder()
 
 	app.SearchTMDBHandler(w, req)
@@ -265,6 +268,7 @@ func TestSearchTMDBHandler_MovieSearchNoYear(t *testing.T) {
 	defer mockServer.Close()
 
 	req := httptest.NewRequest(http.MethodGet, "/media/war-of-the-worlds-2025/search-tmdb?query=War+of+the+Worlds", nil)
+	req.SetPathValue("slug", "war-of-the-worlds-2025")
 	w := httptest.NewRecorder()
 
 	// Note: This test will fail against the real TMDB API because we can't override the const
@@ -283,6 +287,7 @@ func TestSearchTMDBHandler_TVSearch(t *testing.T) {
 	defer mockServer.Close()
 
 	req := httptest.NewRequest(http.MethodGet, "/media/better-call-saul/search-tmdb?query=Better+Call+Saul", nil)
+	req.SetPathValue("slug", "better-call-saul")
 	w := httptest.NewRecorder()
 
 	app.SearchTMDBHandler(w, req)
@@ -301,6 +306,7 @@ func TestConfirmTMDBHandler_NoTMDBClient(t *testing.T) {
 	app := NewApp(mediaList, scanner, tmpl, testDir, "")
 
 	req := httptest.NewRequest(http.MethodGet, "/media/war-of-the-worlds-2025/confirm-tmdb?id=550", nil)
+	req.SetPathValue("slug", "war-of-the-worlds-2025")
 	w := httptest.NewRecorder()
 
 	app.ConfirmTMDBHandler(w, req)
@@ -316,6 +322,7 @@ func TestConfirmTMDBHandler_InvalidSlug(t *testing.T) {
 	defer mockServer.Close()
 
 	req := httptest.NewRequest(http.MethodGet, "/media/nonexistent/confirm-tmdb?id=550", nil)
+	req.SetPathValue("slug", "nonexistent")
 	w := httptest.NewRecorder()
 
 	app.ConfirmTMDBHandler(w, req)
@@ -331,6 +338,7 @@ func TestConfirmTMDBHandler_MissingTMDBID(t *testing.T) {
 	defer mockServer.Close()
 
 	req := httptest.NewRequest(http.MethodGet, "/media/war-of-the-worlds-2025/confirm-tmdb", nil)
+	req.SetPathValue("slug", "war-of-the-worlds-2025")
 	w := httptest.NewRecorder()
 
 	app.ConfirmTMDBHandler(w, req)
@@ -346,6 +354,7 @@ func TestConfirmTMDBHandler_ValidMovieID(t *testing.T) {
 	defer mockServer.Close()
 
 	req := httptest.NewRequest(http.MethodGet, "/media/war-of-the-worlds-2025/confirm-tmdb?id=755898", nil)
+	req.SetPathValue("slug", "war-of-the-worlds-2025")
 	w := httptest.NewRecorder()
 
 	app.SearchTMDBHandler(w, req)
@@ -363,6 +372,7 @@ func TestConfirmTMDBHandler_ValidTVID(t *testing.T) {
 	defer mockServer.Close()
 
 	req := httptest.NewRequest(http.MethodGet, "/media/better-call-saul/confirm-tmdb?id=60059", nil)
+	req.SetPathValue("slug", "better-call-saul")
 	w := httptest.NewRecorder()
 
 	app.SearchTMDBHandler(w, req)
@@ -385,6 +395,7 @@ func TestSaveTMDBHandler_NoTMDBClient(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/media/war-of-the-worlds-2025/set-tmdb", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetPathValue("slug", "war-of-the-worlds-2025")
 	w := httptest.NewRecorder()
 
 	app.SaveTMDBHandler(w, req)
@@ -394,15 +405,18 @@ func TestSaveTMDBHandler_NoTMDBClient(t *testing.T) {
 	}
 }
 
-// TestSaveTMDBHandler_OnlyPOST tests that only POST method is allowed
+// TestSaveTMDBHandler_OnlyPOST verifies the mux pattern enforces POST-only.
 func TestSaveTMDBHandler_OnlyPOST(t *testing.T) {
 	app, mockServer, _ := setupAppWithMockTMDB(t)
 	defer mockServer.Close()
 
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /media/{slug}/set-tmdb", app.SaveTMDBHandler)
+
 	req := httptest.NewRequest(http.MethodGet, "/media/war-of-the-worlds-2025/set-tmdb", nil)
 	w := httptest.NewRecorder()
 
-	app.SaveTMDBHandler(w, req)
+	mux.ServeHTTP(w, req)
 
 	if w.Code != http.StatusMethodNotAllowed {
 		t.Errorf("Expected status %d, got %d", http.StatusMethodNotAllowed, w.Code)
@@ -419,6 +433,7 @@ func TestSaveTMDBHandler_InvalidSlug(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/media/nonexistent/set-tmdb", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetPathValue("slug", "nonexistent")
 	w := httptest.NewRecorder()
 
 	app.SaveTMDBHandler(w, req)
@@ -437,6 +452,7 @@ func TestSaveTMDBHandler_MissingTMDBID(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/media/war-of-the-worlds-2025/set-tmdb", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetPathValue("slug", "war-of-the-worlds-2025")
 	w := httptest.NewRecorder()
 
 	app.SaveTMDBHandler(w, req)
@@ -462,6 +478,7 @@ func TestSaveTMDBHandler_ValidSaveWithoutMetadata(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/media/no-tmdb-2021/set-tmdb", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetPathValue("slug", "no-tmdb-2021")
 	w := httptest.NewRecorder()
 
 	app.SaveTMDBHandler(w, req)
@@ -503,6 +520,7 @@ func TestSaveTMDBHandler_ValidSaveWithMetadata(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/media/no-tmdb-2021/set-tmdb", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetPathValue("slug", "no-tmdb-2021")
 	w := httptest.NewRecorder()
 
 	app.SaveTMDBHandler(w, req)
@@ -537,6 +555,7 @@ func TestSaveTMDBHandler_InvalidTMDBID(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/media/war-of-the-worlds-2025/set-tmdb", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetPathValue("slug", "war-of-the-worlds-2025")
 	w := httptest.NewRecorder()
 
 	// This will likely fail validation because the mock server returns 404 for ID 999999
@@ -563,6 +582,7 @@ func TestSaveTMDBHandler_WrongMediaType(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/media/war-of-the-worlds-2025/set-tmdb", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetPathValue("slug", "war-of-the-worlds-2025")
 	w := httptest.NewRecorder()
 
 	app.SaveTMDBHandler(w, req)
@@ -586,6 +606,7 @@ func TestTMDBWorkflowEndToEnd(t *testing.T) {
 
 	// Step 1: Load search page
 	req1 := httptest.NewRequest(http.MethodGet, "/media/no-tmdb-2021/search-tmdb", nil)
+	req1.SetPathValue("slug", "no-tmdb-2021")
 	w1 := httptest.NewRecorder()
 	app.SearchTMDBHandler(w1, req1)
 
@@ -599,6 +620,7 @@ func TestTMDBWorkflowEndToEnd(t *testing.T) {
 
 	req2 := httptest.NewRequest(http.MethodPost, "/media/no-tmdb-2021/set-tmdb", strings.NewReader(form.Encode()))
 	req2.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req2.SetPathValue("slug", "no-tmdb-2021")
 	w2 := httptest.NewRecorder()
 
 	app.SaveTMDBHandler(w2, req2)
@@ -621,10 +643,13 @@ func TestTMDBWorkflowEndToEnd(t *testing.T) {
 	}
 }
 
-// TestSearchTMDBHandler_URLParsing tests URL parsing for different scenarios
+// TestSearchTMDBHandler_URLParsing verifies the mux routes search-tmdb URLs correctly.
 func TestSearchTMDBHandler_URLParsing(t *testing.T) {
 	app, mockServer, _ := setupAppWithMockTMDB(t)
 	defer mockServer.Close()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /media/{slug}/search-tmdb", app.SearchTMDBHandler)
 
 	tests := []struct {
 		name           string
@@ -639,7 +664,7 @@ func TestSearchTMDBHandler_URLParsing(t *testing.T) {
 		{
 			name:           "Missing slug",
 			url:            "/media//search-tmdb",
-			expectedStatus: http.StatusNotFound,
+			expectedStatus: http.StatusTemporaryRedirect, // mux collapses // and redirects to the un-routable /media/search-tmdb
 		},
 		{
 			name:           "Wrong path format",
@@ -653,7 +678,7 @@ func TestSearchTMDBHandler_URLParsing(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, tt.url, nil)
 			w := httptest.NewRecorder()
 
-			app.SearchTMDBHandler(w, req)
+			mux.ServeHTTP(w, req)
 
 			if w.Code != tt.expectedStatus {
 				t.Errorf("Expected status %d, got %d", tt.expectedStatus, w.Code)
@@ -668,6 +693,7 @@ func TestConfirmTMDBHandler_WithQueryParameter(t *testing.T) {
 	defer mockServer.Close()
 
 	req := httptest.NewRequest(http.MethodGet, "/media/war-of-the-worlds-2025/confirm-tmdb?id=755898&query=test", nil)
+	req.SetPathValue("slug", "war-of-the-worlds-2025")
 	w := httptest.NewRecorder()
 
 	app.SearchTMDBHandler(w, req)
