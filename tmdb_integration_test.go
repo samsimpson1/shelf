@@ -383,7 +383,7 @@ func TestIntegrationFetchAndSaveMetadata(t *testing.T) {
 	}
 
 	// Verify poster was saved
-	posterFile, found := media.FindPosterFile()
+	posterFile, found, _ := NewMetadataLoader().FindPoster(media.Path)
 	if !found {
 		t.Error("Poster file not created")
 	} else {
@@ -442,7 +442,7 @@ func TestIntegrationFetchAndSaveMetadataTV(t *testing.T) {
 	}
 
 	// Verify all metadata files were created
-	posterFile, found := media.FindPosterFile()
+	posterFile, found, _ := NewMetadataLoader().FindPoster(media.Path)
 	if !found {
 		t.Error("Poster file not created for TV show")
 	} else if posterFile == "" {
@@ -737,7 +737,7 @@ func TestIntegrationFetchAndSaveMetadataWithTitle(t *testing.T) {
 	}
 
 	// Verify poster was saved
-	posterFile, found := media.FindPosterFile()
+	posterFile, found, _ := NewMetadataLoader().FindPoster(media.Path)
 	if !found {
 		t.Error("Poster file not created")
 	} else {

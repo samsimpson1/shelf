@@ -129,7 +129,7 @@ func TestIntegrationConvertAndSaveTrackList(t *testing.T) {
 		Path:  tmpDir,
 	}
 
-	loadedTrackList := media.LoadTrackList()
+	loadedTrackList, _ := NewMetadataLoader().LoadTrackList(media.Path)
 	if loadedTrackList == nil {
 		t.Fatal("Failed to load track list")
 	}
@@ -181,7 +181,7 @@ func TestIntegrationFetchAndSaveTrackList(t *testing.T) {
 	}
 
 	// Load and verify
-	trackList := media.LoadTrackList()
+	trackList, _ := NewMetadataLoader().LoadTrackList(media.Path)
 	if trackList == nil {
 		t.Fatal("Failed to load track list")
 	}
@@ -274,7 +274,7 @@ func TestIntegrationScannerWithMusicBrainz(t *testing.T) {
 	}
 
 	// Load and verify track list
-	trackList := media.LoadTrackList()
+	trackList, _ := NewMetadataLoader().LoadTrackList(media.Path)
 	if trackList == nil {
 		t.Fatal("Failed to load track list after scan")
 	}

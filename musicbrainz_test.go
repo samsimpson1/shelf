@@ -278,7 +278,7 @@ func TestFetchAndSaveTrackListCaching(t *testing.T) {
 	}
 
 	// Load the tracks.json and verify it wasn't overwritten
-	loadedTrackList := media.LoadTrackList()
+	loadedTrackList, _ := NewMetadataLoader().LoadTrackList(media.Path)
 	if loadedTrackList == nil {
 		t.Fatal("Expected track list to be loaded")
 	}
@@ -348,7 +348,7 @@ func TestMediaLoadTrackList(t *testing.T) {
 		Path:  tmpDir,
 	}
 
-	loadedTrackList := media.LoadTrackList()
+	loadedTrackList, _ := NewMetadataLoader().LoadTrackList(media.Path)
 	if loadedTrackList == nil {
 		t.Fatal("Expected track list to be loaded")
 	}
@@ -371,7 +371,7 @@ func TestMediaLoadTrackListMissing(t *testing.T) {
 		Path:  tmpDir,
 	}
 
-	loadedTrackList := media.LoadTrackList()
+	loadedTrackList, _ := NewMetadataLoader().LoadTrackList(media.Path)
 	if loadedTrackList != nil {
 		t.Errorf("Expected nil track list, got %v", loadedTrackList)
 	}

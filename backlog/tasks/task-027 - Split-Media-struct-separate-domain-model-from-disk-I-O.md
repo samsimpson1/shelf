@@ -1,7 +1,7 @@
 ---
 id: TASK-027
 title: 'Split Media struct: separate domain model from disk-I/O'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-24 20:49'
 labels:
@@ -27,11 +27,11 @@ Ties in with Task 8 (error-handling standardisation) — the new loader should r
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `Media` struct contains no `os.ReadFile` / `os.Stat` calls
-- [ ] #2 Metadata loading lives in a loader type (or Scanner) that is testable without needing a real directory tree
-- [ ] #3 Errors from metadata loading are propagated rather than silently returning zero values
-- [ ] #4 Templates render from pre-populated view structs
-- [ ] #5 Unit tests for the loader do not depend on fixtures created by other tests
-- [ ] #6 `go test ./...` passes
-- [ ] #7 Playwright E2E suite passes
+- [x] #1 `Media` struct contains no `os.ReadFile` / `os.Stat` calls
+- [x] #2 Metadata loading lives in a loader type (or Scanner) that is testable without needing a real directory tree
+- [x] #3 Errors from metadata loading are propagated rather than silently returning zero values
+- [x] #4 Templates render from pre-populated view structs
+- [x] #5 Unit tests for the loader do not depend on fixtures created by other tests
+- [x] #6 `go test ./...` passes
+- [x] #7 Playwright E2E suite passes
 <!-- AC:END -->

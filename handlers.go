@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
@@ -27,6 +28,7 @@ type App struct {
 	musicBrainzClient *MusicBrainzClient
 	playURLPrefix     string // URL prefix for play commands
 	importSessions    *ImportSessionStore
+	metadataLoader    *MetadataLoader
 }
 
 // NewApp creates a new App instance
@@ -48,7 +50,58 @@ func NewApp(mediaList []Media, scanner *Scanner, templates *template.Template, m
 		musicBrainzClient: nil,
 		playURLPrefix:     "",
 		importSessions:    NewImportSessionStore(),
+		metadataLoader:    NewMetadataLoader(),
 	}
+}
+
+// loadDescriptionForView returns the media description for rendering. Missing
+// files are reported as an empty string; unexpected I/O errors are logged.
+func (app *App) loadDescriptionForView(media *Media) string {
+	desc, err := app.metadataLoader.LoadDescription(media.Path)
+	if err != nil {
+		if !errors.Is(err, ErrMetadataNotFound) {
+			log.Printf("Error loading description for %s: %v", media.Title, err)
+		}
+		return ""
+	}
+	return desc
+}
+
+// loadGenresForView returns the media genres for rendering. Missing files are
+// reported as an empty slice; unexpected I/O errors are logged.
+func (app *App) loadGenresForView(media *Media) []string {
+	genres, err := app.metadataLoader.LoadGenres(media.Path)
+	if err != nil {
+		if !errors.Is(err, ErrMetadataNotFound) {
+			log.Printf("Error loading genres for %s: %v", media.Title, err)
+		}
+		return []string{}
+	}
+	return genres
+}
+
+// loadTrackListForView returns the media track list for rendering. Missing
+// files are reported as nil; unexpected I/O or parse errors are logged.
+func (app *App) loadTrackListForView(media *Media) *TrackList {
+	tl, err := app.metadataLoader.LoadTrackList(media.Path)
+	if err != nil {
+		if !errors.Is(err, ErrMetadataNotFound) {
+			log.Printf("Error loading track list for %s: %v", media.Title, err)
+		}
+		return nil
+	}
+	return tl
+}
+
+// findPosterForView locates the media poster for rendering. Unexpected I/O
+// errors are logged and treated as "no poster".
+func (app *App) findPosterForView(media *Media) (string, bool) {
+	path, found, err := app.metadataLoader.FindPoster(media.Path)
+	if err != nil {
+		log.Printf("Error finding poster for %s: %v", media.Title, err)
+		return "", false
+	}
+	return path, found
 }
 
 // SetTMDBClient sets the TMDB client for the app
@@ -165,7 +218,7 @@ func (app *App) PosterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Find poster file
-	posterPath, found := media.FindPosterFile()
+	posterPath, found := app.findPosterForView(media)
 	if !found {
 		http.NotFound(w, r)
 		return
@@ -201,10 +254,10 @@ func (app *App) DetailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load additional metadata
-	description := media.LoadDescription()
-	genres := media.LoadGenres()
-	_, hasPoster := media.FindPosterFile()
-	trackList := media.LoadTrackList()
+	description := app.loadDescriptionForView(media)
+	genres := app.loadGenresForView(media)
+	_, hasPoster := app.findPosterForView(media)
+	trackList := app.loadTrackListForView(media)
 
 	data := struct {
 		Media         *Media
@@ -421,8 +474,8 @@ func (app *App) ConfirmTMDBHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load current media metadata
-	description := media.LoadDescription()
-	_, hasPoster := media.FindPosterFile()
+	description := app.loadDescriptionForView(media)
+	_, hasPoster := app.findPosterForView(media)
 
 	// Prepare error message
 	var errorMsg string
@@ -570,7 +623,7 @@ func (app *App) SelectPosterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Find current poster
-	currentPosterPath, hasPoster := media.FindPosterFile()
+	currentPosterPath, hasPoster := app.findPosterForView(media)
 
 	data := struct {
 		Media             *Media

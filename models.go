@@ -1,10 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -104,65 +101,9 @@ func (m *Media) Slug() string {
 	return slug
 }
 
-// FindPosterFile returns the path and extension of the poster file if it exists
-func (m *Media) FindPosterFile() (string, bool) {
-	for _, ext := range []string{".jpg", ".jpeg", ".png", ".webp"} {
-		posterPath := filepath.Join(m.Path, "poster"+ext)
-		if _, err := os.Stat(posterPath); err == nil {
-			return posterPath, true
-		}
-	}
-	return "", false
-}
-
 // PosterURL returns the relative URL for the poster image
 func (m *Media) PosterURL() string {
 	return fmt.Sprintf("/posters/%s", m.Slug())
-}
-
-// LoadDescription reads and returns the description from description.txt
-func (m *Media) LoadDescription() string {
-	descPath := filepath.Join(m.Path, "description.txt")
-	data, err := os.ReadFile(descPath)
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(string(data))
-}
-
-// LoadGenres reads and returns the genres from genre.txt as a slice
-func (m *Media) LoadGenres() []string {
-	genrePath := filepath.Join(m.Path, "genre.txt")
-	data, err := os.ReadFile(genrePath)
-	if err != nil {
-		return []string{}
-	}
-	genresText := strings.TrimSpace(string(data))
-	if genresText == "" {
-		return []string{}
-	}
-	// Split by comma and trim whitespace
-	genres := strings.Split(genresText, ",")
-	for i := range genres {
-		genres[i] = strings.TrimSpace(genres[i])
-	}
-	return genres
-}
-
-// LoadTrackList reads and returns the track list from tracks.json
-func (m *Media) LoadTrackList() *TrackList {
-	tracksPath := filepath.Join(m.Path, "tracks.json")
-	data, err := os.ReadFile(tracksPath)
-	if err != nil {
-		return nil
-	}
-
-	var trackList TrackList
-	if err := json.Unmarshal(data, &trackList); err != nil {
-		return nil
-	}
-
-	return &trackList
 }
 
 // PlayCommand generates a VLC play command for the disk
